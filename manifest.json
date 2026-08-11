@@ -1,7 +1,7 @@
 {
-  "name": "🎀 每日生活管理",
-  "short_name": "每日生活",
-  "description": "Hello Kitty 粉色风格每日生活管理仪表板",
+  "name": "个人工作台",
+  "short_name": "工作台",
+  "description": "粉色风格每日生活管理仪表板",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#FFF0F5",
