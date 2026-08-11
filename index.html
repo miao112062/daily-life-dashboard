@@ -1,0 +1,3416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎀 每日生活管理 · Hello Kitty</title>
+  <meta http-equiv="Cache-Control" content="no-store">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+  <style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #fef5f9;
+    --card-bg: rgba(255,255,255,0.85);
+    --text: #4a3244;
+    --text-light: #9e7d9a;
+    --accent: #f0a0c0;
+    --accent-dark: #e07098;
+    --accent-light: #fce4ec;
+    --pink-deep: #e07098;
+    --pink-red: #d44778;
+    --lavender: #c4a8d8;
+    --peach: #f8c8b8;
+    --mint: #a8d8c8;
+    --income: #7cb88a;
+    --expense: #e07098;
+    --border: #f0d8e4;
+    --border-soft: #f5e4f0;
+    --shadow: 0 4px 20px rgba(180,120,160,0.1);
+    --shadow-hover: 0 8px 30px rgba(180,120,160,0.18);
+    --radius: 24px;
+    --radius-sm: 16px;
+    --radius-xs: 12px;
+    --sidebar-w: 240px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { overflow-x: hidden; }
+
+  /* Cute scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #f0c0d4; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #e0a0b8; }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #fef5f9 0%, #fdf0f7 30%, #faf0f8 60%, #fef8f5 100%);
+    background-attachment: fixed;
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  /* Subtle floating decoration */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -120px; right: -80px;
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(240,160,192,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -100px; left: 200px;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(200,160,216,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: linear-gradient(180deg, #ffffff 0%, #fef8fb 100%);
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 30px rgba(180,140,160,0.1);
+    z-index: 100;
+    padding: 32px 0 24px;
+    border-right: 1px solid var(--border-soft);
+  }
+  .sidebar-logo {
+    padding: 0 20px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pink-deep);
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sidebar-logo .sidebar-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fce4ec, #f0a0c0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 3px 12px rgba(224,112,152,0.25);
+    border: 2px solid #fff;
+  }
+  .sidebar-logo .sidebar-avatar img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  #sidebarNickname {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
+  .sidebar-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 12px;
+  }
+  .sidebar-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--text-light);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    cursor: pointer;
+    position: relative;
+    line-height: 1.2;
+  }
+  .sidebar-nav a:hover {
+    background: linear-gradient(135deg, #fef0f6, #fde4ee);
+    color: var(--pink-deep);
+    transform: translateY(-2px);
+  }
+  .sidebar-nav a.active {
+    background: linear-gradient(135deg, #fde4ee, #fad0e0);
+    color: var(--pink-deep);
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(224,112,152,0.15);
+  }
+  .sidebar-nav a .nav-emoji { font-size: 22px; line-height: 1; }
+  .sidebar-footer {
+    padding: 20px 20px 0;
+    font-size: 12px;
+    color: #e0b0c8;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  /* ===== MAIN ===== */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 36px 40px;
+    min-height: 100vh;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ===== DATE BAR ===== */
+  .date-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+    padding: 14px 24px;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  .date-bar .date-label {
+    font-weight: 600; color: var(--text-light); font-size: 13px;
+    background: linear-gradient(135deg, #fef0f6, #fde4ee);
+    padding: 6px 14px;
+    border-radius: 20px;
+  }
+  .date-bar input[type="date"] {
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 9px 16px;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    background: #fef8fb;
+    font-family: inherit;
+    transition: all 0.3s;
+  }
+  .date-bar input[type="date"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(240,160,192,0.15);
+  }
+  .date-bar .btn-today {
+    background: linear-gradient(135deg, #f0a0c0, #e07098);
+    color: #fff;
+    border: none;
+    padding: 9px 22px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    letter-spacing: 0.5px;
+    box-shadow: 0 3px 12px rgba(224,112,152,0.2);
+  }
+  .date-bar .btn-today:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(224,112,152,0.3);
+  }
+
+  /* ===== CONTENT PANELS ===== */
+  .panel {
+    display: none;
+    animation: fadeSlideIn 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+  .panel.active { display: block; }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .module-title {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--pink-deep);
+    position: relative;
+  }
+  .module-title::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, var(--border), transparent);
+    border-radius: 1px;
+  }
+
+  /* ===== HOME ===== */
+  .home-hero {
+    background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 40%, #fce4ec 100%);
+    border-radius: var(--radius);
+    padding: 20px 26px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.7);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .home-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -30px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .home-hero .hero-illustration {
+    width: 150px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 6px 12px rgba(200,120,140,0.12));
+    animation: gentleFloat 4s ease-in-out infinite;
+  }
+  @keyframes gentleFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  .home-hero .hero-illustration svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .home-hero .hero-content {
+    flex: 1;
+    z-index: 1;
+  }
+  .home-hero .hero-content h2 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--pink-deep);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+  .home-hero .hero-content p {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+  .home-hero .hero-btn {
+    background: linear-gradient(135deg, var(--accent), var(--pink-deep));
+    color: #fff;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 22px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 3px 12px rgba(231,84,128,0.25);
+    transition: all 0.3s;
+  }
+  .home-hero .hero-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(231,84,128,0.4);
+  }
+  .home-hero .hero-btn:active { transform: scale(0.97); }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .home-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.6);
+    transition: all 0.3s;
+  }
+  .home-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .home-card h3 {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--pink-deep);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .overview-list { display: flex; flex-direction: column; gap: 12px; }
+  .overview-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #fef8fb, #fdf4f8);
+    border-radius: var(--radius-sm);
+    transition: all 0.25s;
+  }
+  .overview-item:hover { background: #fef0f6; transform: translateX(4px); }
+  .overview-item .overview-icon {
+    width: 42px; height: 42px;
+    background: #fff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .overview-item .overview-info { flex: 1; }
+  .overview-item .overview-label { font-size: 12px; color: var(--text-light); font-weight: 500; margin-bottom: 2px; }
+  .overview-item .overview-value { font-size: 16px; font-weight: 700; color: var(--text); }
+
+  .mood-picker {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .mood-btn {
+    flex: 1;
+    padding: 12px 8px;
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    background: #fff;
+    font-size: 26px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mood-btn:hover { transform: translateY(-2px); background: #fef8fb; border-color: var(--accent); }
+  .mood-btn.selected {
+    background: linear-gradient(135deg, #fde4ee, #fad0e0);
+    border-color: var(--pink-deep);
+    box-shadow: 0 3px 12px rgba(224,112,152,0.2);
+    transform: translateY(-1px);
+  }
+  .mood-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  .mood-btn:disabled:hover { transform: none; background: #fff; border-color: var(--border); }
+  .mood-note {
+    width: 100%;
+    min-height: 70px;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    resize: vertical;
+    margin-bottom: 12px;
+    background: #fef8fb;
+    outline: none;
+    transition: all 0.3s;
+  }
+  .mood-note:focus { border-color: var(--pink-deep); box-shadow: 0 0 0 3px rgba(224,112,152,0.1); }
+  .mood-note:disabled { background: #f5f5f5; color: #999; cursor: not-allowed; }
+  .mood-save {
+    width: 100%;
+    background: linear-gradient(135deg, #f0a0c0, #e07098);
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 12px;
+  }
+  .mood-save:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(224,112,152,0.25); }
+  .mood-save:disabled {
+    background: #f0e0e8;
+    color: #b8a0b0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  #btnSaveMood.saved,
+  #btnSaveMood.saved:disabled {
+    background: linear-gradient(135deg, #f0c090, #e8a870) !important;
+    color: #fff !important;
+  }
+  .mood-history {
+    max-height: 120px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .mood-record {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #fef8fb;
+    border-radius: 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .mood-record .mood-emoji { font-size: 18px; }
+  .mood-record .mood-text { flex: 1; color: var(--text); font-weight: 500; }
+  .mood-record .mood-date { font-size: 11px; color: var(--text-light); }
+
+  .habit-list { display: flex; flex-direction: column; gap: 10px; }
+  .habit-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, #fef8fb, #fdf4f8);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.25s;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .habit-item:hover { background: #fef0f6; }
+  .habit-item input { display: none; }
+  .habit-item .habit-check {
+    width: 22px; height: 22px;
+    border: 2px solid var(--accent);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .habit-item input:checked + .habit-check {
+    background: linear-gradient(135deg, #f0a0c0, #e07098);
+    border-color: transparent;
+  }
+  .habit-item input:checked + .habit-check::after {
+    content: '✓';
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .habit-item input:checked ~ .habit-text { text-decoration: line-through; opacity: 0.6; }
+
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .quick-btn {
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .quick-btn:hover {
+    background: linear-gradient(135deg, #fef0f6, #fde4ee);
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(224,112,152,0.12);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.6);
+    transition: all 0.3s;
+  }
+  .card:hover { box-shadow: var(--shadow-hover); }
+  .card h3 {
+    font-size: 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--pink-deep);
+    font-weight: 700;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 18px;
+  }
+
+  /* Meal cards */
+  .meal-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.6);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .meal-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 5px; height: 100%;
+  }
+  .meal-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+  .meal-card.breakfast::before { background: linear-gradient(180deg, #ffccd5, #ffb3c6); }
+  .meal-card.lunch::before { background: linear-gradient(180deg, #f0a0c0, #e07098); }
+  .meal-card.dinner::before { background: linear-gradient(180deg, #ffc8d6, #f8a0b8); }
+  .meal-card h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .meal-card .meal-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .meal-card .meal-cal {
+    display: inline-block;
+    background: linear-gradient(135deg, #fef0f6, #fde4ee);
+    color: var(--pink-deep);
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .calorie-summary {
+    background: linear-gradient(135deg, #fef5f9, #fde8f2, #fef0f6);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  .calorie-summary .cal-total { text-align: center; min-width: 100px; }
+  .calorie-summary .cal-total .cal-num {
+    font-size: 38px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #e07098, #c45078);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+  .calorie-summary .cal-total .cal-label {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .calorie-summary .cal-divider {
+    width: 1px; height: 44px;
+    background: linear-gradient(to bottom, transparent, #f0a0c0, transparent);
+    border-radius: 1px;
+  }
+  .calorie-summary .cal-breakdown { display: flex; gap: 20px; flex-wrap: wrap; }
+  .calorie-summary .cal-item { text-align: center; min-width: 64px; }
+  .calorie-summary .cal-item .cal-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .calorie-summary .cal-item .cal-dot.bk { background: #ffb3c6; }
+  .calorie-summary .cal-item .cal-dot.lu { background: #ff8fab; }
+  .calorie-summary .cal-item .cal-dot.dn { background: #ffb8c8; }
+  .calorie-summary .cal-item .cal-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .calorie-summary .cal-item .cal-tag { font-size: 11px; color: var(--text-light); margin-top: 3px; font-weight: 500; }
+  .meal-card .steps { font-size: 13px; line-height: 1.9; color: var(--text); }
+  .meal-card .steps li { margin-bottom: 5px; }
+  .meal-card .ingredients {
+    background: linear-gradient(135deg, #fef8fb, #fdf0f6);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: var(--text-light);
+  }
+
+  /* ===== DIET QUOTE ===== */
+  .diet-quote-bar {
+    background: linear-gradient(135deg, #fef5f9, #fde8f2);
+    border-radius: var(--radius);
+    padding: 18px 24px;
+    box-shadow: var(--shadow);
+    margin-top: 18px;
+    border: 1px solid rgba(255,255,255,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .diet-quote-bar .quote-text { font-size: 14px; color: var(--pink-deep); font-weight: 500; font-style: italic; }
+  .diet-quote-bar .quote-author { font-size: 12px; color: var(--text-light); white-space: nowrap; }
+
+  /* Skincare */
+  .skincare-section {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.6);
+    transition: all 0.3s;
+  }
+  .skincare-section:hover { box-shadow: var(--shadow-hover); }
+  .skincare-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .skincare-section h3 .sec-title { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+  .skincare-section h3 .sec-add {
+    background: linear-gradient(135deg, #fef0f6, #fde4ee);
+    color: var(--pink-deep);
+    border: 1.5px solid var(--border);
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .skincare-section h3 .sec-add:hover {
+    background: linear-gradient(135deg, #fde4ee, #fad0e0);
+    transform: scale(1.05);
+  }
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 4px;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--border);
+    transition: all 0.2s;
+  }
+  .checklist-item:hover { background: #fefafc; border-radius: 10px; padding-left: 8px; padding-right: 8px; }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-item .check-box {
+    width: 22px; height: 22px;
+    border: 2px solid var(--accent);
+    border-radius: 7px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .checklist-item .check-box:hover { transform: scale(1.1); }
+  .checklist-item .check-box.checked {
+    background: linear-gradient(135deg, #f0a0c0, #e07098);
+    color: #fff;
+    font-size: 11px;
+    border-color: transparent;
+  }
+  .checklist-item .sk-text { flex: 1; font-weight: 500; }
+  .checklist-item .sk-text.done { text-decoration: line-through; opacity: 0.5; }
+  .checklist-item .sk-actions {
+    display: flex;
+    gap: 6px;
+    opacity: 1;
+  }
+  .checklist-item .sk-actions button {
+    background: #fff;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    padding: 7px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--text-light);
+    transition: all 0.2s;
+    min-width: 36px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .checklist-item .sk-actions button:hover { background: #fef0f6; color: var(--pink-deep); border-color: var(--accent); transform: translateY(-1px); }
+  .checklist-item .sk-actions button:active { transform: scale(0.95); }
+  .skincare-form {
+    display: flex;
+    gap: 10px;
+    padding: 12px 0 4px;
+    border-top: 1px dashed var(--border);
+    margin-top: 10px;
+  }
+  .skincare-form input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    font-size: 13px;
+    background: #fef8fb;
+    transition: all 0.3s;
+  }
+  .skincare-form input:focus {
+    outline: none;
+    border-color: var(--pink-deep);
+    box-shadow: 0 0 0 3px rgba(224,112,152,0.1);
+  }
+  .skincare-form .sk-form-actions { display: flex; gap: 8px; }
+  .skincare-form .sk-form-actions button {
+    padding: 8px 16px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+  .skincare-form .sk-form-actions .btn-confirm { background: var(--pink-deep); color: #fff; }
+  .skincare-form .sk-form-actions .btn-confirm:hover { background: var(--pink-red); transform: scale(1.03); }
+  .skincare-form .sk-form-actions .btn-cancel { background: #fef0f6; color: var(--pink-deep); }
+  .skincare-form .sk-form-actions .btn-cancel:hover { background: #fde4ee; }
+  .tip-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #fde4ee, #fad0e0);
+    color: var(--pink-red);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 5px 5px 5px 0;
+  }
+
+  /* Workout daily */
+  .workout-cal-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius);
+    padding: 20px 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  .workout-cal-card .cal-block { display: flex; flex-direction: column; }
+  .workout-cal-card .cal-label {
+    font-size: 12px;
+    color: var(--text-light);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .workout-cal-card .cal-value {
+    font-size: 36px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #e07098, #c45078);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+  .workout-cal-card .cal-divider {
+    width: 1px; height: 44px;
+    background: linear-gradient(180deg, transparent, #f0c0d4, transparent);
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+  .workout-cal-card .cal-progress { flex: 1; min-width: 160px; }
+  .workout-cal-card .cal-progress-text { font-size: 13px; color: var(--text-light); font-weight: 500; line-height: 1.6; }
+  .workout-cal-card .cal-progress-bar {
+    height: 6px;
+    background: #f5e8f0;
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .workout-cal-card .cal-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f0a0c0, #ff8fab, #e07098);
+    border-radius: 4px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 2px 8px rgba(224,112,152,0.3);
+  }
+  .workout-cal-card .cal-badge {
+    background: linear-gradient(135deg, #fef0f6, #fde4ee);
+    color: var(--pink-deep);
+    padding: 9px 18px;
+    border-radius: 25px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .workout-day-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  .workout-day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 2px dashed var(--border);
+  }
+  .workout-day-header h3 { font-size: 16px; font-weight: 700; }
+  .workout-day-header .day-status {
+    font-size: 13px;
+    color: var(--text-light);
+    background: #fef8fb;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .workout-day-header .day-status.done {
+    color: #fff;
+    background: linear-gradient(135deg, #f0a0c0, #e07098);
+    font-weight: 600;
+  }
+  .rest-placeholder {
+    text-align: center;
+    padding: 36px 24px;
+    color: var(--text-light);
+    font-size: 14px;
+    background: linear-gradient(135deg, #fef8fb, #fdf4f8);
+    border-radius: 20px;
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+  .ex-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 6px;
+    border-bottom: 1px dashed var(--border);
+    transition: all 0.2s;
+  }
+  .ex-item:hover { background: #fefafc; border-radius: 12px; padding-left: 12px; padding-right: 12px; }
+  .ex-item:last-child { border-bottom: none; }
+  .ex-item input[type="checkbox"] {
+    width: 22px; height: 22px;
+    accent-color: var(--pink-deep);
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: 6px;
+  }
+  .ex-item .ex-info { flex: 1; }
+  .ex-item .ex-info.done { text-decoration: line-through; opacity: 0.5; }
+  .ex-item .ex-name { font-weight: 700; font-size: 15px; margin-bottom: 3px; }
+  .ex-item .ex-meta { font-size: 12px; color: var(--text-light); }
+  .ex-item .ex-cal {
+    font-size: 13px;
+    color: var(--pink-deep);
+    font-weight: 700;
+    background: linear-gradient(135deg, #fef0f6, #fde4ee);
+    padding: 3px 12px;
+    border-radius: 16px;
+  }
+  .ex-item .btn-del-ex {
+    background: #fff; border: 1px solid var(--border); color: var(--pink-red);
+    cursor: pointer; font-size: 18px; padding: 7px 12px;
+    border-radius: 10px; transition: all 0.2s; opacity: 1;
+    min-width: 36px; min-height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .ex-item .btn-del-ex:hover { background: #fde4ee; transform: scale(1.1); border-color: var(--pink-red); }
+  .ex-item .btn-del-ex:active { transform: scale(0.95); }
+  .day-actions {
+    display: flex;
+    gap: 14px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px dashed var(--border);
+  }
+  .day-actions button {
+    background: #fff;
+    border: 2px solid var(--border);
+    color: var(--pink-deep);
+    padding: 9px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .day-actions button:hover { background: #fef0f6; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(224,112,152,0.12); }
+  .day-actions button.primary {
+    background: linear-gradient(135deg, #e07098, #d44778);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 3px 12px rgba(224,112,152,0.2);
+  }
+  .day-actions button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(224,112,152,0.3);
+  }
+  .add-ex-form {
+    background: linear-gradient(135deg, #fef8fb, #fdf4f8);
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    margin-top: 14px;
+    display: none;
+    border: 1px solid var(--border-soft);
+  }
+  .add-ex-form.active { display: block; animation: fadeSlideIn 0.3s; }
+  .add-ex-form input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    background: #fff;
+    transition: all 0.3s;
+  }
+  .add-ex-form input:focus {
+    outline: none;
+    border-color: var(--pink-deep);
+    box-shadow: 0 0 0 3px rgba(224,112,152,0.1);
+  }
+  .add-ex-form .form-row { display: flex; gap: 12px; }
+  .add-ex-form .form-row input { flex: 1; margin-bottom: 0; }
+  .add-ex-form .form-actions { display: flex; gap: 12px; margin-top: 14px; }
+  .add-ex-form .form-actions button {
+    flex: 1; padding: 10px; border-radius: 12px; border: none;
+    cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s;
+  }
+  .add-ex-form .form-actions .btn-confirm {
+    background: linear-gradient(135deg, #e07098, #d44778); color: #fff;
+  }
+  .add-ex-form .form-actions .btn-confirm:hover { transform: scale(1.02); }
+  .add-ex-form .form-actions .btn-cancel {
+    background: #fff; border: 2px solid var(--border); color: var(--text);
+  }
+  .add-ex-form .form-actions .btn-cancel:hover { background: #fef8fb; }
+
+  /* Profile */
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 32px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(254,248,251,0.95));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 22px;
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  .profile-avatar-wrap {
+    position: relative;
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: linear-gradient(135deg, #fce4ec, #f0a0c0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 44px;
+    box-shadow: 0 4px 16px rgba(224,112,152,0.2);
+    border: 3px solid #fff;
+    transition: all 0.3s;
+  }
+  .profile-avatar-wrap:hover { transform: scale(1.05); }
+  .profile-avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-avatar-wrap .avatar-hover {
+    position: absolute;
+    inset: 0;
+    background: rgba(180,100,140,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s;
+    border-radius: 50%;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .profile-avatar-wrap:hover .avatar-hover { opacity: 1; }
+  .profile-avatar-wrap input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+    font-size: 0;
+  }
+  .profile-info { flex: 1; }
+  .profile-info .profile-nickname {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  .profile-info .profile-nickname:hover { color: var(--pink-deep); }
+  .profile-info .profile-sign {
+    font-size: 14px;
+    color: var(--text-light);
+    font-weight: 500;
+  }
+  .profile-info .btn-edit-profile {
+    margin-top: 12px;
+    background: linear-gradient(135deg, #f0a0c0, #e07098);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 3px 12px rgba(224,112,152,0.2);
+  }
+  .profile-info .btn-edit-profile:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(224,112,152,0.3); }
+  .body-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+  }
+  .body-stat-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.6);
+    transition: all 0.3s;
+  }
+  .body-stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+  .body-stat-card .stat-emoji { font-size: 28px; margin-bottom: 8px; }
+  .body-stat-card .stat-label { font-size: 12px; color: var(--text-light); margin-bottom: 6px; font-weight: 500; }
+  .body-stat-card .stat-value { font-size: 22px; font-weight: 800; color: var(--text); }
+  .body-stat-card .stat-unit { font-size: 12px; color: var(--text-light); font-weight: 500; }
+  .stat-history { margin-top: 22px; }
+  .stat-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .stat-history-header h3 { margin: 0; }
+  .stat-history .stat-record {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: linear-gradient(135deg, #fef8fb, #fdf4f8);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .stat-history .stat-record:hover { background: #fef0f6; }
+  .stat-record .record-date { color: var(--text-light); font-weight: 500; }
+  .stat-record .record-values { color: var(--text); font-weight: 600; }
+
+  /* Finance */
+  .finance-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .fin-sum-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-sm);
+    padding: 18px 20px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.6);
+    transition: all 0.3s;
+  }
+  .fin-sum-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+  .fin-sum-card .fin-label { font-size: 12px; color: var(--text-light); margin-bottom: 6px; font-weight: 500; }
+  .fin-sum-card .fin-value { font-size: 24px; font-weight: 800; }
+  .fin-sum-card.income .fin-value { color: var(--income); }
+  .fin-sum-card.expense .fin-value { color: var(--expense); }
+  .fin-sum-card.balance .fin-value { color: var(--text); }
+
+  .fin-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 22px;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 18px;
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  .fin-form .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .fin-form label { font-size: 12px; color: var(--text-light); font-weight: 600; }
+  .fin-form select, .fin-form input {
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 9px 14px;
+    font-size: 14px;
+    outline: none;
+    background: #fef8fb;
+    font-family: inherit;
+    transition: all 0.3s;
+  }
+  .fin-form select:focus, .fin-form input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(240,160,192,0.1);
+  }
+  .fin-form .btn-add {
+    background: linear-gradient(135deg, #f0a0c0, #e07098);
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 3px 12px rgba(224,112,152,0.2);
+  }
+  .fin-form .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(224,112,152,0.3); }
+
+  .fin-entries-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .fin-entries-header h3 { margin: 0; }
+  .fin-month-picker {
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 14px;
+    font-size: 14px;
+    color: var(--text);
+    background: #fef8fb;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .fin-month-picker:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(240,160,192,0.15); }
+
+  .fin-entry {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: #fff;
+    border-radius: var(--radius-xs);
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    font-size: 14px;
+    transition: all 0.25s;
+    border: 1px solid transparent;
+  }
+  .fin-entry:hover { border-color: var(--border); box-shadow: 0 4px 16px rgba(180,120,160,0.08); transform: translateX(3px); }
+  .fin-entry .entry-cat { font-size: 20px; width: 32px; text-align: center; flex-shrink: 0; }
+  .fin-entry .entry-info { flex: 1; }
+  .fin-entry .entry-name { font-weight: 700; }
+  .fin-entry .entry-date {
+    font-size: 11px;
+    color: var(--text-light);
+    background: var(--accent-light);
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    font-weight: 500;
+  }
+  .fin-entry .entry-note { font-size: 12px; color: var(--text-light); }
+  .fin-entry .entry-amount { font-weight: 700; font-size: 16px; }
+  .fin-entry.income .entry-amount { color: var(--income); }
+  .fin-entry.expense .entry-amount { color: var(--expense); }
+  .fin-entry .entry-actions { display: flex; gap: 8px; opacity: 1; }
+  .fin-entry .btn-edit, .fin-entry .btn-del {
+    background: #fff; border: 1px solid var(--border); cursor: pointer;
+    font-size: 15px; padding: 7px 12px; border-radius: 10px;
+    transition: all 0.2s; opacity: 1;
+    min-width: 36px; min-height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .fin-entry .btn-edit:hover { background: #fde4ee; border-color: var(--accent); transform: translateY(-1px); }
+  .fin-entry .btn-del:hover { background: #fad0e0; border-color: var(--pink-red); transform: translateY(-1px); }
+  .fin-entry .btn-edit:active, .fin-entry .btn-del:active { transform: scale(0.95); }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-light);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .empty-state .empty-emoji { font-size: 56px; margin-bottom: 16px; opacity: 0.6; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    background: rgba(180,120,160,0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    animation: fadeIn 0.3s;
+    padding: 24px;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 32px;
+    width: 400px;
+    max-width: 92vw;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    box-shadow: 0 16px 48px rgba(180,120,160,0.2);
+    animation: scaleIn 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h3 { margin-bottom: 20px; font-size: 18px; font-weight: 800; color: var(--pink-deep); }
+  .modal .form-group { margin-bottom: 14px; }
+  .modal .form-group label {
+    display: block; font-size: 13px; color: var(--text-light);
+    font-weight: 600; margin-bottom: 6px;
+  }
+  .modal .form-group select, .modal .form-group input {
+    width: 100%;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 14px;
+    outline: none;
+    background: #fef8fb;
+    font-family: inherit;
+    transition: all 0.3s;
+  }
+  .modal .form-group select:focus, .modal .form-group input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(240,160,192,0.1);
+  }
+  .modal .btn-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+  .modal .btn-save {
+    background: linear-gradient(135deg, #f0a0c0, #e07098); color: #fff; border: none;
+    padding: 10px 24px; border-radius: 25px; cursor: pointer; font-weight: 600;
+    transition: all 0.3s; box-shadow: 0 3px 12px rgba(224,112,152,0.2);
+  }
+  .modal .btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(224,112,152,0.3); }
+  .modal .btn-cancel {
+    background: #f5f0f5; color: var(--text); border: none;
+    padding: 10px 24px; border-radius: 25px; cursor: pointer; font-weight: 600;
+    transition: all 0.3s;
+  }
+  .modal .btn-cancel:hover { background: #ede0eb; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    /* Prevent iOS zoom on focus when input font-size < 16px */
+    input[type="text"], input[type="number"], input[type="date"],
+    input[type="month"], input[type="email"], input[type="tel"],
+    input[type="password"], input[type="search"], select, textarea {
+      font-size: 16px !important;
+    }
+
+    /* Sidebar — compact with labels */
+    .sidebar { width: 66px; padding: 16px 4px; }
+    .sidebar-logo { justify-content: center; padding: 0 0 12px; flex-direction: column; gap: 2px; }
+    .sidebar-logo .sidebar-avatar { width: 32px; height: 32px; font-size: 14px; }
+    #sidebarNickname { display: block; font-size: 9px; max-width: 54px; text-align: center; color: var(--pink-deep); }
+    .sidebar-nav { gap: 4px; padding: 0 3px; }
+    .sidebar-nav a { justify-content: center; padding: 8px 2px; border-radius: 12px; gap: 2px; font-size: 9px; }
+    .sidebar-nav a .nav-emoji { font-size: 18px; }
+    .sidebar-footer { display: none; }
+
+    /* Main area */
+    .main { margin-left: 66px; padding: 18px 12px; }
+
+    /* Date bar */
+    .date-bar { padding: 10px 14px; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .date-bar .date-label { font-size: 11px; padding: 5px 10px; }
+    .date-bar input[type="date"] { font-size: 12px; padding: 6px 10px; }
+    #btnToday { font-size: 12px; padding: 6px 12px; }
+
+    /* Module title */
+    .module-title { font-size: 19px; margin-bottom: 16px; }
+
+    /* Cards */
+    .card { padding: 16px; margin-bottom: 12px; }
+    .card h3 { font-size: 15px; }
+    .card-grid { grid-template-columns: 1fr; gap: 12px; }
+
+    /* ===== HOME ===== */
+    .home-hero { flex-direction: column; text-align: center; padding: 16px 18px; gap: 10px; }
+    .home-hero .hero-illustration { width: 100px; }
+    .home-hero .hero-content h2 { font-size: 16px; }
+    .home-hero .hero-content p { margin-bottom: 10px; font-size: 12px; }
+    .home-grid { grid-template-columns: 1fr; gap: 12px; }
+    .home-card { padding: 16px; }
+    .home-card h3 { font-size: 15px; margin-bottom: 12px; }
+    .overview-item { padding: 10px 12px; gap: 10px; }
+    .overview-item .overview-icon { width: 36px; height: 36px; font-size: 18px; }
+    .overview-item .overview-value { font-size: 14px; }
+    .mood-picker { gap: 4px; margin-bottom: 10px; }
+    .mood-btn { font-size: 22px; padding: 10px 4px; border-radius: 14px; }
+    .mood-note { font-size: 13px; min-height: 56px; }
+    .quick-actions { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .quick-btn { font-size: 13px; padding: 12px 8px; border-radius: 12px; }
+
+    /* ===== PROFILE ===== */
+    .profile-header { flex-direction: column; text-align: center; padding: 20px; gap: 14px; }
+    .profile-avatar-wrap { width: 80px; height: 80px; font-size: 36px; }
+    .profile-info .profile-nickname { font-size: 20px; }
+    .profile-info .profile-sign { font-size: 13px; }
+    .profile-info .btn-edit-profile { font-size: 12px; padding: 7px 16px; }
+    .body-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .body-stat-card { padding: 16px; }
+    .body-stat-card .stat-emoji { font-size: 24px; }
+    .body-stat-card .stat-value { font-size: 18px; }
+    .stat-history-header { flex-wrap: wrap; gap: 8px; }
+    .stat-history-header h3 { font-size: 14px; }
+
+    /* ===== DIET ===== */
+    .calorie-summary { padding: 16px; flex-direction: column; gap: 12px; }
+    .calorie-summary .cal-total .cal-num { font-size: 30px; }
+    .calorie-summary .cal-divider { width: 100%; height: 1px; }
+    .calorie-summary .cal-breakdown { justify-content: center; gap: 14px; }
+    .calorie-summary .cal-item .cal-value { font-size: 17px; }
+    .meal-card { padding: 16px; }
+    .meal-card h3 { font-size: 16px; }
+    .meal-card .meal-name { font-size: 14px; }
+    .meal-card .steps { font-size: 12px; }
+    .meal-card .ingredients { font-size: 12px; padding: 10px 14px; }
+    .diet-quote-bar { flex-direction: column; text-align: center; padding: 14px 16px; }
+    .diet-quote-bar .quote-text { font-size: 13px; }
+
+    /* ===== SKINCARE ===== */
+    .skincare-section { padding: 14px; }
+    .skincare-section h3 { font-size: 14px; }
+    .skincare-section h3 .sec-add { font-size: 11px; padding: 4px 10px; }
+    .skincare-form { flex-direction: column; gap: 8px; }
+    .skincare-form input { font-size: 13px; padding: 9px 12px; }
+    .checklist-item { font-size: 13px; padding: 8px 2px; }
+    .checklist-item .sk-actions button { padding: 6px 8px; font-size: 12px; border-radius: 8px; }
+
+    /* ===== WORKOUT ===== */
+    .workout-day-card { padding: 14px; }
+    .workout-day-header { flex-wrap: wrap; gap: 8px; }
+    .workout-day-header h3 { font-size: 15px; }
+    .ex-item { flex-wrap: wrap; gap: 8px; padding: 10px 0; }
+    .ex-item .ex-name { font-size: 13px; }
+
+    /* ===== FINANCE ===== */
+    #panel-finance .module-title { font-size: 17px; margin-bottom: 8px; }
+    .finance-summary { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 10px; }
+    .fin-sum-card { padding: 10px 6px; border-radius: 12px; min-width: 0; }
+    .fin-sum-card .fin-label { font-size: 10px; margin-bottom: 3px; }
+    .fin-sum-card .fin-value { font-size: 15px; }
+    .fin-form {
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .fin-form .form-group { width: 100%; gap: 4px; }
+    .fin-form label { font-size: 12px; }
+    .fin-form select, .fin-form input { font-size: 14px; padding: 10px 12px; border-radius: 12px; width: 100%; }
+    .fin-form .btn-add { width: 100%; padding: 10px; font-size: 14px; border-radius: 12px; }
+    #finEntries { padding: 10px; }
+    .fin-entries-header { flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+    .fin-entries-header h3 { font-size: 13px; }
+    #finEntriesList .empty-state { padding: 16px 12px; font-size: 12px; }
+    #finEntriesList .empty-state .empty-emoji { font-size: 32px; margin-bottom: 6px; }
+    .fin-entry { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "cat info amount" "cat act act"; align-items: center; padding: 8px 6px; gap: 4px 8px; font-size: 12px; border-radius: 10px; }
+    .fin-entry .entry-cat { font-size: 14px; grid-area: cat; }
+    .fin-entry .entry-info { grid-area: info; min-width: 0; }
+    .fin-entry .entry-amount { font-size: 13px; grid-area: amount; text-align: right; white-space: nowrap; }
+    .fin-entry .entry-actions { grid-area: act; gap: 4px; display: flex; }
+    .fin-entry .entry-actions button { width: 26px; height: 26px; font-size: 12px; }
+    .fin-month-picker { font-size: 12px; padding: 5px 8px; border-radius: 10px; }
+
+    /* ===== MODAL ===== */
+    .modal { width: 92vw; padding: 24px; }
+    .modal h3 { font-size: 16px; margin-bottom: 16px; }
+    .modal .form-group { margin-bottom: 10px; }
+    .modal .form-group label { font-size: 12px; }
+    .modal .form-group select, .modal .form-group input { font-size: 13px; padding: 9px 12px; }
+    .modal .btn-row { margin-top: 14px; gap: 8px; }
+    .modal .btn-save, .modal .btn-cancel { font-size: 13px; padding: 9px 18px; }
+
+    /* Form buttons & global */
+    .btn-action { font-size: 13px; padding: 8px 16px; }
+  }
+
+  @media (max-width: 480px) {
+    .main { padding: 14px 10px; }
+    .card { padding: 14px; }
+
+    /* Home - even more compact */
+    .home-hero .hero-illustration { width: 80px; }
+    .home-hero .hero-content h2 { font-size: 15px; }
+    .overview-item { padding: 8px 10px; }
+    .overview-item .overview-icon { width: 32px; height: 32px; font-size: 16px; }
+    .quick-actions { grid-template-columns: 1fr; }
+    .mood-btn { font-size: 20px; padding: 8px 2px; }
+
+    /* Profile */
+    .body-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .body-stat-card { padding: 12px; }
+    .body-stat-card .stat-value { font-size: 16px; }
+
+    /* Finance */
+    .finance-summary { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .fin-sum-card { padding: 8px 4px; }
+    .fin-sum-card .fin-label { font-size: 9px; }
+    .fin-sum-card .fin-value { font-size: 14px; }
+    .fin-form { padding: 10px; gap: 8px; }
+    .fin-form label { font-size: 11px; }
+    .fin-form select, .fin-form input { padding: 8px 10px; font-size: 13px; }
+    .fin-form .btn-add { padding: 9px; font-size: 13px; }
+    #finEntries { padding: 8px; }
+    .fin-entries-header h3 { font-size: 12px; }
+    .fin-entry { display: grid; grid-template-columns: auto 1fr auto; gap: 3px 6px; padding: 6px 4px; font-size: 11px; }
+    .fin-entry .entry-cat { font-size: 13px; }
+    .fin-entry .entry-amount { font-size: 12px; }
+    #finEntriesList .empty-state { padding: 12px 8px; font-size: 11px; }
+    .fin-month-picker { font-size: 11px; padding: 4px 6px; }
+
+    /* Workout */
+    .workout-day-card { padding: 12px; }
+    .workout-day-header h3 { font-size: 14px; }
+
+    /* Modal */
+    .modal { padding: 18px; }
+  }
+
+  /* Crop modal */
+  .crop-overlay {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
+  }
+  .crop-overlay.show { display: flex; }
+  .crop-container {
+    background: #fff; border-radius: 20px; padding: 20px;
+    width: 90vw; max-width: 480px; max-height: 90vh;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .crop-title { font-size: 16px; font-weight: 600; color: var(--text); text-align: center; }
+  .crop-area { width: 100%; height: 300px; overflow: hidden; border-radius: 12px; background: #f8f0f8; }
+  .crop-area img { max-width: 100%; display: block; }
+  .crop-actions { display: flex; gap: 10px; justify-content: center; }
+  .crop-actions button {
+    padding: 10px 28px; border: none; border-radius: 20px; font-size: 14px; cursor: pointer;
+    font-weight: 500; transition: all 0.2s;
+  }
+  .btn-crop-cancel { background: #f0e0e8; color: #888; }
+  .btn-crop-confirm { background: var(--accent); color: #fff; }
+  .btn-crop-confirm:hover { background: var(--accent-dark); transform: translateY(-1px); }
+  .btn-crop-cancel:hover { background: #e8d4e0; }
+  @media (max-width: 768px) {
+    .crop-area { height: 240px; }
+    .crop-container { padding: 14px; gap: 8px; }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <div class="sidebar-logo" id="sidebarLogo">
+    <div class="sidebar-avatar" id="sidebarAvatar">
+      <span id="sidebarAvatarEmoji">🎀</span>
+      <img id="sidebarAvatarImg" style="display:none;" alt="">
+    </div>
+    <span id="sidebarNickname">Hello Kitty</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a data-panel="home" class="active"><span class="nav-emoji">🏡</span><span>首页</span></a>
+    <a data-panel="diet"><span class="nav-emoji">🍽️</span><span>每日饮食</span></a>
+    <a data-panel="skincare"><span class="nav-emoji">🧴</span><span>护肤打卡</span></a>
+    <a data-panel="workout"><span class="nav-emoji">💪</span><span>塑形训练</span></a>
+    <a data-panel="finance"><span class="nav-emoji">💰</span><span>记账理财</span></a>
+    <a data-panel="profile"><span class="nav-emoji">👧</span><span>我的</span></a>
+  </nav>
+  <div class="sidebar-footer">♡ 每一天都可爱 ♡</div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<main class="main">
+
+  <!-- Date Bar -->
+  <div class="date-bar">
+    <span class="date-label">📅 选择日期</span>
+    <input type="date" id="datePicker">
+    <button class="btn-today" id="btnToday">今天</button>
+  </div>
+
+  <!-- ========== 首页 ========== -->
+  <section class="panel active" id="panel-home">
+    <div class="module-title">🏡 首页</div>
+
+    <!-- Hero Banner -->
+    <div class="home-hero">
+      <div class="hero-illustration">
+        <svg viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg" aria-label="窗边女孩插画">
+          <defs>
+            <linearGradient id="curtainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#fce4ec;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#f8bbd0;stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#e1f5fe;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#b3e5fc;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <!-- Window -->
+          <rect x="20" y="20" width="140" height="140" rx="12" fill="url(#skyGrad)" stroke="#f8bbd0" stroke-width="2"/>
+          <line x1="90" y1="20" x2="90" y2="160" stroke="#f8bbd0" stroke-width="2"/>
+          <line x1="20" y1="90" x2="160" y2="90" stroke="#f8bbd0" stroke-width="2"/>
+          <!-- Curtains -->
+          <path d="M20 20 Q40 80 20 140 L50 140 Q70 80 50 20 Z" fill="url(#curtainGrad)" opacity="0.9"/>
+          <path d="M160 20 Q140 80 160 140 L130 140 Q110 80 130 20 Z" fill="url(#curtainGrad)" opacity="0.9"/>
+          <!-- Plant on windowsill -->
+          <ellipse cx="45" cy="150" rx="14" ry="6" fill="#8d6e63"/>
+          <ellipse cx="45" cy="147" rx="12" ry="4" fill="#f8bbd0"/>
+          <path d="M45 147 Q35 130 40 120 Q45 135 45 147" fill="#f48fb1"/>
+          <path d="M45 147 Q55 128 50 118 Q45 133 45 147" fill="#f06292"/>
+          <!-- Desk -->
+          <rect x="100" y="130" width="110" height="8" rx="4" fill="#d7ccc8"/>
+          <rect x="115" y="138" width="8" height="42" rx="2" fill="#bcaaa4"/>
+          <rect x="190" y="138" width="8" height="42" rx="2" fill="#bcaaa4"/>
+          <!-- Girl -->
+          <ellipse cx="165" cy="100" rx="18" ry="20" fill="#ffccbc"/>
+          <path d="M147 98 Q165 85 183 98 Q183 110 165 112 Q147 110 147 98" fill="#5d4037"/>
+          <path d="M147 105 Q165 118 183 105" fill="none" stroke="#ffab91" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="158" cy="102" rx="2" ry="2.5" fill="#4e342e"/>
+          <ellipse cx="172" cy="102" rx="2" ry="2.5" fill="#4e342e"/>
+          <path d="M162 108 Q165 111 168 108" fill="none" stroke="#d84315" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- Body / Sweater -->
+          <path d="M145 122 Q140 145 145 165 L195 165 Q200 145 195 122 Q170 132 145 122" fill="#fff8e1"/>
+          <!-- Arm writing -->
+          <path d="M155 140 Q140 150 130 145" fill="none" stroke="#ffccbc" stroke-width="7" stroke-linecap="round"/>
+          <!-- Notebook -->
+          <rect x="110" y="138" width="38" height="26" rx="3" fill="#fff" stroke="#cfd8dc" stroke-width="1"/>
+          <line x1="118" y1="145" x2="142" y2="145" stroke="#b0bec5" stroke-width="1"/>
+          <line x1="118" y1="151" x2="140" y2="151" stroke="#b0bec5" stroke-width="1"/>
+          <line x1="118" y1="157" x2="136" y2="157" stroke="#b0bec5" stroke-width="1"/>
+          <!-- Pen -->
+          <line x1="132" y1="148" x2="142" y2="142" stroke="#78909c" stroke-width="2" stroke-linecap="round"/>
+          <!-- Mug -->
+          <rect x="185" y="132" width="14" height="16" rx="2" fill="#fff3e0" stroke="#ffcc80" stroke-width="1"/>
+          <path d="M199 136 Q204 136 204 140 Q204 144 199 144" fill="none" stroke="#ffcc80" stroke-width="1.5"/>
+          <!-- Corgi dog -->
+          <ellipse cx="205" cy="170" rx="18" ry="12" fill="#ffab91"/>
+          <circle cx="190" cy="162" r="10" fill="#ffab91"/>
+          <ellipse cx="186" cy="156" rx="4" ry="6" fill="#ffab91"/>
+          <ellipse cx="194" cy="156" rx="4" ry="6" fill="#ffab91"/>
+          <circle cx="188" cy="161" r="1.5" fill="#4e342e"/>
+          <circle cx="192" cy="161" r="1.5" fill="#4e342e"/>
+          <ellipse cx="190" cy="165" rx="2" ry="1.5" fill="#4e342e"/>
+          <path d="M215 160 Q222 155 224 162" fill="none" stroke="#ffab91" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="hero-content">
+        <h2>有计划的每一天都很安心</h2>
+        <p>记录习惯，管理时间，陪自己慢慢变好</p>
+        <button class="hero-btn" id="btnStartDay">🌸 开始新的一天</button>
+      </div>
+    </div>
+
+    <!-- Home Grid -->
+    <div class="home-grid">
+      <!-- Daily Overview -->
+      <div class="home-card overview-card">
+        <h3>📊 今日概览</h3>
+        <div class="overview-list" id="homeOverview">
+          <div class="overview-item">
+            <div class="overview-icon">🍽️</div>
+            <div class="overview-info">
+              <div class="overview-label">今日饮食</div>
+              <div class="overview-value" id="ovDiet">-- 千卡</div>
+            </div>
+          </div>
+          <div class="overview-item">
+            <div class="overview-icon">💪</div>
+            <div class="overview-info">
+              <div class="overview-label">训练打卡</div>
+              <div class="overview-value" id="ovWorkout">-- / -- 项</div>
+            </div>
+          </div>
+          <div class="overview-item">
+            <div class="overview-icon">🧴</div>
+            <div class="overview-info">
+              <div class="overview-label">护肤进度</div>
+              <div class="overview-value" id="ovSkincare">-- / -- 步</div>
+            </div>
+          </div>
+          <div class="overview-item">
+            <div class="overview-icon">💰</div>
+            <div class="overview-info">
+              <div class="overview-label">今日支出</div>
+              <div class="overview-value" id="ovFinance">¥ --</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mood Diary -->
+      <div class="home-card mood-card">
+        <h3>🌈 今日心情</h3>
+        <div class="mood-picker" id="moodPicker">
+          <button class="mood-btn" data-mood="happy">😊</button>
+          <button class="mood-btn" data-mood="calm">😌</button>
+          <button class="mood-btn" data-mood="tired">😴</button>
+          <button class="mood-btn" data-mood="excited">🤩</button>
+          <button class="mood-btn" data-mood="sad">😢</button>
+        </div>
+        <textarea class="mood-note" id="moodNote" placeholder="写下今天的心情小记..."></textarea>
+        <button class="mood-save" id="btnSaveMood">💾 保存心情</button>
+        <div class="mood-history" id="moodHistory"></div>
+      </div>
+
+      <!-- Habit Tracker -->
+      <div class="home-card habit-card">
+        <h3>✨ 习惯打卡</h3>
+        <div class="habit-list" id="habitList">
+          <label class="habit-item"><input type="checkbox" data-habit="water"><span class="habit-check"></span><span class="habit-text">喝够 8 杯水 💧</span></label>
+          <label class="habit-item"><input type="checkbox" data-habit="read"><span class="habit-check"></span><span class="habit-text">阅读 30 分钟 📖</span></label>
+          <label class="habit-item"><input type="checkbox" data-habit="sleep"><span class="habit-check"></span><span class="habit-text">11点前睡觉 🌙</span></label>
+          <label class="habit-item"><input type="checkbox" data-habit="fruit"><span class="habit-check"></span><span class="habit-text">吃水果/蔬菜 🥗</span></label>
+          <label class="habit-item"><input type="checkbox" data-habit="tidy"><span class="habit-check"></span><span class="habit-text">整理房间 10 分钟 🧹</span></label>
+          <label class="habit-item"><input type="checkbox" data-habit="gratitude"><span class="habit-check"></span><span class="habit-text">记录 3 件感恩小事 🙏</span></label>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="home-card quick-card">
+        <h3>🚀 快捷入口</h3>
+        <div class="quick-actions">
+          <button class="quick-btn" data-panel="diet">🍽️ 去记录饮食</button>
+          <button class="quick-btn" data-panel="workout">💪 开始运动</button>
+          <button class="quick-btn" data-panel="finance">💰 记一笔账</button>
+          <button class="quick-btn" data-panel="skincare">🧴 护肤打卡</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 每日饮食 ========== -->
+  <section class="panel" id="panel-diet">
+    <div class="module-title">🍽️ 每日饮食</div>
+    <div id="calorieBar"></div>
+    <div class="card-grid" id="dietContent"></div>
+    <div id="dietTips" class="card" style="margin-top:18px;"></div>
+  </section>
+
+  <!-- ========== 护肤打卡 ========== -->
+  <section class="panel" id="panel-skincare">
+    <div class="module-title">🧴 护肤打卡</div>
+    <div id="skincareContent"></div>
+  </section>
+
+  <!-- 塑形训练 -->
+  <section class="panel" id="panel-workout">
+    <div class="module-title">💪 塑形训练</div>
+    <div id="workoutCalCard"></div>
+    <div id="workoutContent"></div>
+  </section>
+
+  <!-- ========== 我的 ========== -->
+  <section class="panel" id="panel-profile">
+    <div class="module-title">👧 我的</div>
+    <div class="profile-header">
+      <div class="profile-avatar-wrap" id="avatarWrap" title="点击更换头像">
+        <span id="avatarEmoji">🙂</span>
+        <img id="avatarImg" style="display:none;" alt="头像">
+        <div class="avatar-hover">📷 更换</div>
+        <input type="file" id="avatarInput" accept="image/*">
+      </div>
+      <div class="profile-info">
+        <div class="profile-nickname" id="displayNickname" title="点击编辑昵称">未设置昵称</div>
+        <div class="profile-sign" id="displaySign">点击编辑个人信息 ✨</div>
+        <button class="btn-edit-profile" id="btnEditProfile">✏️ 编辑资料</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📏 身体数据</h3>
+      <div class="body-stats" id="bodyStats"></div>
+      <div class="stat-history" id="statHistory" style="display:none;">
+        <div class="stat-history-header">
+          <h3 style="margin-top:16px;">📋 当月记录</h3>
+          <input type="month" id="bodyMonthPicker" class="fin-month-picker">
+        </div>
+        <div id="statHistoryList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 记账理财 ========== -->
+  <section class="panel" id="panel-finance">
+    <div class="module-title">💰 记账理财</div>
+    <div class="finance-summary" id="finSummary"></div>
+    <div class="fin-form" id="finForm">
+      <div class="form-group">
+        <label>类型</label>
+        <select id="finType">
+          <option value="expense">🔴 支出</option>
+          <option value="income">🟢 收入</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>分类</label>
+        <select id="finCategory">
+          <option value="🍜 餐饮">🍜 餐饮</option>
+          <option value="🚇 交通">🚇 交通</option>
+          <option value="🛒 购物">🛒 购物</option>
+          <option value="🏠 居住">🏠 居住</option>
+          <option value="🎮 娱乐">🎮 娱乐</option>
+          <option value="💊 医疗">💊 医疗</option>
+          <option value="📚 教育">📚 教育</option>
+          <option value="💼 工资">💼 工资</option>
+          <option value="📈 理财">📈 理财</option>
+          <option value="🎁 红包">🎁 红包</option>
+          <option value="📋 其他">📋 其他</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>金额 (¥)</label>
+        <input type="number" id="finAmount" placeholder="0.00" step="0.01" min="0.01">
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <input type="text" id="finNote" placeholder="可选备注">
+      </div>
+      <button class="btn-add" id="btnAddFin">＋ 记一笔</button>
+    </div>
+    <div class="card" id="finEntries">
+      <div class="fin-entries-header">
+        <h3>📋 当月明细</h3>
+        <input type="month" id="finMonthPicker" class="fin-month-picker">
+      </div>
+      <div id="finEntriesList"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal" style="display:none;">
+  <div class="modal">
+    <h3>✏️ 编辑账目</h3>
+    <div class="form-group">
+      <label>类型</label>
+      <select id="editType"></select>
+    </div>
+    <div class="form-group">
+      <label>分类</label>
+      <select id="editCategory"></select>
+    </div>
+    <div class="form-group">
+      <label>金额 (¥)</label>
+      <input type="number" id="editAmount" step="0.01" min="0.01">
+    </div>
+    <div class="form-group">
+      <label>备注</label>
+      <input type="text" id="editNote">
+    </div>
+    <div class="btn-row">
+      <button class="btn-cancel" id="btnCancelEdit">取消</button>
+      <button class="btn-save" id="btnSaveEdit">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Edit Modal -->
+<div class="modal-overlay" id="profileModal" style="display:none;">
+  <div class="modal" style="width:420px;">
+    <h3>✏️ 编辑个人资料</h3>
+    <div class="form-group">
+      <label>昵称</label>
+      <input type="text" id="editNickname" placeholder="你的昵称" maxlength="5">
+    </div>
+    <div class="form-group">
+      <label>个性签名</label>
+      <input type="text" id="editSign" placeholder="一句话介绍自己" maxlength="50">
+    </div>
+    <div class="form-group">
+      <label>身高 (cm)</label>
+      <input type="number" id="editHeight" placeholder="165" step="0.1" min="100" max="250">
+    </div>
+    <div class="form-group">
+      <label>体重 (kg)</label>
+      <input type="number" id="editWeight" placeholder="55" step="0.1" min="30" max="200">
+    </div>
+    <div class="form-group">
+      <label>体脂率 (%)</label>
+      <input type="number" id="editBodyFat" placeholder="25" step="0.1" min="5" max="60">
+    </div>
+    <div class="form-group">
+      <label>胸围 (cm)</label>
+      <input type="number" id="editBust" placeholder="88" step="0.1" min="50" max="180">
+    </div>
+    <div class="form-group">
+      <label>腰围 (cm)</label>
+      <input type="number" id="editWaist" placeholder="68" step="0.1" min="40" max="160">
+    </div>
+    <div class="form-group">
+      <label>臀围 (cm)</label>
+      <input type="number" id="editHip" placeholder="92" step="0.1" min="50" max="180">
+    </div>
+    <div class="btn-row">
+      <button class="btn-cancel" id="btnCancelProfile">取消</button>
+      <button class="btn-save" id="btnSaveProfile">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== DATA ENGINE ====================
+const today = new Date();
+let currentDate = { home: formatDate(today), diet: formatDate(today), skincare: formatDate(today), workout: formatDate(today), finance: formatDate(today), profile: formatDate(today) };
+let currentPanel = 'home';
+let editingEntryId = null;
+let editingEntryDate = null;
+
+function getCurrentDate() { return currentDate[currentPanel]; }
+
+function formatDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+// Seed-based random for consistent daily content
+function seededRandom(seed) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = ((h << 5) - h) + seed.charCodeAt(i);
+    h |= 0;
+  }
+  return function() {
+    h = (h * 1103515245 + 12345) & 0x7fffffff;
+    return h / 0x7fffffff;
+  };
+}
+
+// ==================== NAVIGATION ====================
+document.querySelectorAll('.sidebar-nav a').forEach(link => {
+  link.addEventListener('click', function() {
+    switchPanel(this.dataset.panel);
+  });
+});
+
+// ==================== DATE ====================
+const datePicker = document.getElementById('datePicker');
+datePicker.value = getCurrentDate();
+
+datePicker.addEventListener('change', function() {
+  currentDate[currentPanel] = this.value;
+  renderCurrentPanel();
+});
+
+document.getElementById('btnToday').addEventListener('click', function() {
+  currentDate[currentPanel] = formatDate(new Date());
+  datePicker.value = getCurrentDate();
+  renderCurrentPanel();
+});
+
+function formatDisplayDate(dateStr) {
+  const [y,m,d] = dateStr.split('-');
+  const weekDays = ['日','一','二','三','四','五','六'];
+  const dt = new Date(y, m-1, d);
+  return `${y}年${m}月${d}日 星期${weekDays[dt.getDay()]}`;
+}
+
+// ==================== DIET DATA ====================
+const dietDB = {
+  breakfast: [
+    { name: '燕麦水果碗', cal: '~320千卡', ing: '即食燕麦40g、牛奶200ml、蓝莓30g、香蕉半根、蜂蜜5g', steps: ['燕麦加牛奶小火煮3分钟至粘稠','倒入碗中，铺上切片香蕉和蓝莓','淋上蜂蜜即可享用'] },
+    { name: '牛油果鸡蛋吐司', cal: '~380千卡', ing: '全麦吐司2片、牛油果半个、鸡蛋1个、黑胡椒、盐', steps: ['吐司烤至微焦','牛油果压成泥，加盐和黑胡椒拌匀，抹在吐司上','煎一个溏心蛋放在上面即可'] },
+    { name: '紫薯牛奶粥', cal: '~290千卡', ing: '紫薯100g、大米30g、牛奶150ml、枸杞少许', steps: ['紫薯去皮切小丁','大米加水煮15分钟至开花','加入紫薯丁再煮10分钟，倒入牛奶搅匀，撒枸杞'] },
+    { name: '蔬菜鸡蛋卷', cal: '~260千卡', ing: '鸡蛋2个、胡萝卜30g、菠菜20g、牛奶15ml、盐', steps: ['鸡蛋打散加牛奶和盐搅匀','胡萝卜菠菜切碎，小火炒软','倒入蛋液摊平，卷起切段'] },
+    { name: '红豆薏米糊', cal: '~310千卡', ing: '红豆30g、薏米30g、红枣3颗、冰糖少许', steps: ['红豆薏米提前泡4小时','全部放入豆浆机/破壁机，加水到刻度线','选择米糊模式，约25分钟完成'] },
+    { name: '南瓜小米粥', cal: '~270千卡', ing: '南瓜150g、小米40g、枸杞少许', steps: ['南瓜去皮切小块','小米洗净加水煮15分钟','加入南瓜再煮10分钟至软烂，撒枸杞'] },
+    { name: '鸡蛋火腿三明治', cal: '~350千卡', ing: '吐司2片、鸡蛋1个、火腿2片、生菜、番茄酱', steps: ['鸡蛋煎熟','吐司略烤，依次放生菜、火腿、鸡蛋','挤少许番茄酱，盖另一片吐司对切'] },
+    { name: '酸奶水果捞', cal: '~280千卡', ing: '希腊酸奶200g、草莓5颗、芒果半个、格兰诺拉麦片30g、蜂蜜', steps: ['草莓和芒果切小块','杯底铺酸奶，依次放水果和麦片','淋少许蜂蜜，冷藏10分钟更美味'] },
+    { name: '玉米鸡蛋饼', cal: '~300千卡', ing: '玉米面50g、面粉30g、鸡蛋1个、葱花、盐、水', steps: ['所有材料混合搅成面糊，稀稠度像酸奶','平底锅刷薄油，倒一勺面糊摊平','两面煎至金黄即可'] },
+    { name: '皮蛋瘦肉粥', cal: '~340千卡', ing: '大米50g、皮蛋1个、瘦肉50g、姜丝、盐、白胡椒粉', steps: ['大米提前泡30分钟','瘦肉切丝加生抽腌，皮蛋切丁','大米加水煮20分钟，加肉丝皮蛋姜丝再煮10分钟','加盐和白胡椒粉调味'] },
+    { name: '香蕉松饼', cal: '~360千卡', ing: '熟香蕉1根、鸡蛋1个、面粉80g、牛奶80ml、泡打粉3g', steps: ['香蕉压成泥，加入鸡蛋牛奶搅匀','筛入面粉和泡打粉，拌至无干粉','平底锅小火，舀一勺面糊，气泡出现后翻面','淋少许枫糖浆或蜂蜜'] },
+    { name: '虾仁馄饨', cal: '~380千卡', ing: '馄饨皮15张、虾仁100g、猪肉馅50g、紫菜、虾皮、葱花', steps: ['虾仁剁碎与猪肉馅混合，加盐姜末调味','包入馄饨皮','水开下馄饨煮至浮起','碗中放紫菜虾皮葱花，浇入馄饨汤'] },
+    { name: '豆浆油条', cal: '~450千卡', ing: '豆浆300ml、油条1根、茶叶蛋1个', steps: ['豆浆加热至温热','油条切段配豆浆','搭配一个茶叶蛋，营养均衡'] },
+    { name: '牛奶燕麦粥', cal: '~290千卡', ing: '快熟燕麦50g、牛奶250ml、葡萄干15g、坚果碎10g', steps: ['燕麦加少量水煮2分钟','倒入牛奶搅匀加热至微沸','撒上葡萄干和坚果碎'] },
+    { name: '红薯鸡蛋盘', cal: '~330千卡', ing: '红薯1个（中等）、鸡蛋2个、圣女果5颗、橄榄油', steps: ['红薯切块蒸15分钟至软','鸡蛋煮熟切半','摆盘，配圣女果，淋少许橄榄油'] },
+    { name: '鲜肉小笼包', cal: '~400千卡', ing: '小笼包6个、醋、姜丝', steps: ['冷冻小笼包上锅蒸8-10分钟','蘸醋和姜丝食用','配一杯热豆浆更佳'] },
+    { name: '紫菜蛋花汤面', cal: '~340千卡', ing: '龙须面80g、鸡蛋1个、紫菜、虾皮、葱花、盐、香油', steps: ['水开下面条煮3分钟','淋入打散的蛋液','碗底放紫菜虾皮葱花，盛入面条','加盐和几滴香油'] },
+    { name: '芝士焗红薯', cal: '~350千卡', ing: '红薯2个、马苏里拉芝士30g、黄油5g、牛奶20ml', steps: ['红薯蒸熟，挖出薯泥','薯泥加黄油牛奶拌匀，填回薯皮','撒上芝士碎，烤箱180°C烤10分钟至金黄'] },
+    { name: '隔夜燕麦杯', cal: '~310千卡', ing: '即食燕麦40g、牛奶150ml、酸奶50g、奇亚籽10g、水果', steps: ['所有材料放入密封罐中搅匀','冷藏过夜','第二天取出，放上新鲜水果即可'] },
+    { name: '菠菜蘑菇烘蛋', cal: '~280千卡', ing: '鸡蛋2个、菠菜50g、蘑菇3个、芝士碎、盐、黑胡椒', steps: ['菠菜焯水挤干，蘑菇切片','鸡蛋打散加盐，混入菠菜蘑菇','倒入烤碗，撒芝士，180°C烤15分钟'] },
+    { name: '红糖糍粑', cal: '~370千卡', ing: '糯米粉100g、红糖30g、熟黄豆粉', steps: ['糯米粉加温水揉成团，分成小剂子压扁','平底锅少许油，小火煎至两面金黄','红糖加少量水熬成糖浆淋上，撒黄豆粉'] },
+    { name: '鸡胸肉卷饼', cal: '~380千卡', ing: '全麦卷饼1张、鸡胸肉80g、生菜、番茄、甜面酱', steps: ['鸡胸肉煎熟切条','卷饼略加热','铺生菜、鸡肉条、番茄片，抹甜面酱卷起'] },
+    { name: '牛奶炖蛋', cal: '~250千卡', ing: '鸡蛋2个、牛奶200ml、糖10g', steps: ['鸡蛋打散加糖和牛奶搅匀，过滤','碗上盖保鲜膜扎小孔','水开上锅小火蒸12分钟，关火焖5分钟'] },
+    { name: '牛肉煎包', cal: '~420千卡', ing: '牛肉馅100g、洋葱、面团、生抽、五香粉', steps: ['牛肉馅加洋葱碎和调料拌匀','面团分成剂子擀皮包馅','平底锅油煎至两面金黄，加少许水焖熟'] },
+  ],
+  lunch: [
+    { name: '番茄牛肉烩饭', cal: '~520千卡', ing: '牛肉150g、番茄2个、米饭1碗、洋葱半个、番茄酱', steps: ['牛肉切小块，加生抽和淀粉腌10分钟','番茄去皮切块，洋葱切丝','热油炒洋葱出香，下牛肉炒变色，加番茄炒出汁','加半碗水、番茄酱、盐炖10分钟，浇在饭上'] },
+    { name: '西兰花炒虾仁', cal: '~420千卡', ing: '虾仁200g、西兰花1颗、蒜末、盐、料酒、淀粉', steps: ['虾仁加料酒、盐、淀粉抓匀腌5分钟','西兰花焯水1分钟捞出','热油爆香蒜末，下虾仁滑炒至变色','加入西兰花翻炒，加盐调味出锅'] },
+    { name: '照烧鸡腿饭', cal: '~550千卡', ing: '鸡腿1只、米饭1碗、生抽、蜂蜜、料酒、姜', steps: ['鸡腿去骨，用生抽、料酒、姜片腌20分钟','调照烧汁：生抽2勺+蜂蜜1勺+料酒1勺+水2勺','鸡皮面朝下煎至金黄，翻面，倒入照烧汁','小火收汁，切片铺在饭上，淋汁'] },
+    { name: '麻婆豆腐', cal: '~380千卡', ing: '豆腐1块、猪肉末80g、豆瓣酱、花椒粉、葱姜蒜、淀粉', steps: ['豆腐切小方块，焯水1分钟','热油炒肉末至变色，加豆瓣酱炒出红油','加姜蒜末、半碗水煮开，放入豆腐轻推','淋淀粉水勾芡，撒花椒粉和葱花'] },
+    { name: '清蒸鲈鱼', cal: '~350千卡', ing: '鲈鱼1条、姜丝、葱丝、蒸鱼豉油、料酒', steps: ['鱼洗净划几刀，抹料酒和盐，放姜丝','水开后上锅大火蒸8-10分钟','倒掉盘中汁水，撒葱丝，淋蒸鱼豉油','热油浇上激出香味'] },
+    { name: '宫保鸡丁', cal: '~480千卡', ing: '鸡胸肉200g、花生米30g、黄瓜半根、干辣椒、生抽、醋、糖', steps: ['鸡肉切丁加生抽淀粉腌10分钟','调汁：生抽1+醋1+糖1+淀粉水','鸡丁滑油变色捞出，爆香干辣椒','下鸡丁黄瓜丁，倒料汁翻炒，加花生米出锅'] },
+    { name: '番茄鸡蛋面', cal: '~430千卡', ing: '面条150g、番茄2个、鸡蛋2个、葱花、盐、番茄酱', steps: ['番茄切块，鸡蛋打散','热油炒鸡蛋盛出，同锅炒番茄出汁','加水和番茄酱煮开，下面条煮熟','倒回鸡蛋，加盐调味，撒葱花'] },
+    { name: '红烧排骨', cal: '~560千卡', ing: '排骨300g、冰糖15g、生抽、老抽、八角、桂皮、姜', steps: ['排骨焯水洗净','热锅少油炒冰糖至焦糖色','下排骨翻炒上色，加生抽老抽八角桂皮','加水没过排骨，小火炖40分钟收汁'] },
+    { name: '鱼香肉丝', cal: '~450千卡', ing: '猪里脊150g、木耳、胡萝卜、青椒、豆瓣酱、糖醋汁', steps: ['肉切丝加生抽淀粉腌','木耳胡萝卜青椒切丝','调鱼香汁：糖2+醋2+生抽1+淀粉水','肉丝滑油捞出，炒豆瓣酱，下蔬菜和肉丝，倒汁翻炒'] },
+    { name: '酸菜鱼', cal: '~400千卡', ing: '草鱼片200g、酸菜150g、干辣椒、花椒、姜蒜、蛋清', steps: ['鱼片加蛋清盐淀粉抓匀','酸菜切段，热油炒香加姜蒜','加水煮开，下酸菜煮5分钟','滑入鱼片，煮到变白，撒干辣椒花椒淋热油'] },
+    { name: '地三鲜', cal: '~380千卡', ing: '土豆1个、茄子1根、青椒1个、蒜末、生抽、糖、淀粉', steps: ['土豆茄子切滚刀块，青椒切块','土豆茄子分别过油至金黄','锅留底油爆香蒜末，下所有食材','加生抽、糖、水淀粉翻炒均匀'] },
+    { name: '咖喱鸡肉饭', cal: '~530千卡', ing: '鸡腿肉200g、土豆1个、胡萝卜1根、洋葱半个、咖喱块2块', steps: ['鸡肉切块，土豆胡萝卜切滚刀块','热油炒洋葱出香，下鸡肉炒变色','加土豆胡萝卜翻炒，加水没过食材','煮熟后关火放入咖喱块搅化，小火煮3分钟'] },
+    { name: '蒜蓉粉丝蒸虾', cal: '~320千卡', ing: '大虾10只、粉丝1把、蒜末、葱花、蒸鱼豉油', steps: ['粉丝泡软铺盘底','虾开背去虾线铺在粉丝上','蒜末用油炒香，铺在虾上','上锅蒸8分钟，淋蒸鱼豉油撒葱花'] },
+    { name: '回锅肉', cal: '~520千卡', ing: '五花肉200g、蒜苗3根、豆瓣酱、豆豉、姜片', steps: ['五花肉整块煮20分钟，切薄片','热锅少油，下肉片煸至微卷','加豆瓣酱豆豉姜片炒香','放蒜苗段翻炒1分钟出锅'] },
+    { name: '可乐鸡翅', cal: '~480千卡', ing: '鸡翅中8个、可乐200ml、生抽、老抽、姜片', steps: ['鸡翅划两刀，冷水下锅焯去血水','热锅少油煎鸡翅至两面金黄','倒入可乐、生抽老抽、姜片','中小火煮15分钟，大火收汁至浓稠'] },
+    { name: '干煸四季豆', cal: '~300千卡', ing: '四季豆300g、猪肉末80g、干辣椒、花椒、蒜末、生抽', steps: ['四季豆去筋掰段，沥干水分','多油将四季豆炸至表皮起皱捞出','锅留底油炒肉末，加干辣椒花椒蒜末','倒回四季豆，加生抽翻炒均匀'] },
+    { name: '酸辣土豆丝', cal: '~250千卡', ing: '土豆2个、干辣椒3个、花椒、醋、盐', steps: ['土豆切细丝，冷水浸泡去淀粉','热油爆香干辣椒和花椒','大火快炒土豆丝2分钟','加盐和醋翻匀立刻出锅'] },
+    { name: '葱油拌面', cal: '~400千卡', ing: '面条150g、小葱5根、生抽、老抽、糖、油', steps: ['小葱切段，小火慢炸至焦黄','关火加生抽2勺+老抽1勺+糖半勺搅匀','面条煮熟过凉水','拌入葱油，撒葱酥'] },
+    { name: '京酱肉丝', cal: '~440千卡', ing: '猪里脊200g、甜面酱、大葱、黄瓜、豆腐皮、淀粉', steps: ['肉切丝加生抽淀粉腌','大葱黄瓜切丝，豆腐皮切方块','热油滑炒肉丝至变色盛出','锅留底油炒香甜面酱，倒回肉丝翻炒裹酱'] },
+    { name: '石锅拌饭', cal: '~520千卡', ing: '米饭1碗、牛肉末80g、菠菜、豆芽、胡萝卜、鸡蛋、辣酱', steps: ['各种蔬菜分别焯水或炒熟调味','石锅刷油，放入米饭','依次摆放蔬菜和牛肉末，中间打一个生鸡蛋','大火加热至底部焦脆，拌入韩式辣酱'] },
+    { name: '青椒肉丝', cal: '~380千卡', ing: '猪里脊150g、青椒2个、姜丝、生抽、淀粉、盐', steps: ['肉切丝加生抽淀粉腌10分钟','青椒切丝','热油滑炒肉丝变色盛出','同锅炒青椒至断生，倒回肉丝加盐翻匀'] },
+    { name: '油焖大虾', cal: '~350千卡', ing: '大虾300g、葱姜蒜、番茄酱、糖、料酒、生抽', steps: ['虾剪须去虾线','热油爆香葱姜蒜，下虾煎至变红','加料酒+番茄酱1勺+糖1勺+生抽，少许水','加盖焖3分钟，大火收汁'] },
+    { name: '红烧牛腩面', cal: '~560千卡', ing: '牛腩200g、面条150g、番茄、八角、桂皮、生抽、冰糖', steps: ['牛腩切块焯水','热油炒糖色，下牛腩翻炒加调料和水','炖1.5小时至软烂','煮面，浇上牛腩和汤汁'] },
+    { name: '香菇滑鸡', cal: '~380千卡', ing: '鸡腿肉200g、干香菇10朵、姜片、生抽、蚝油、淀粉', steps: ['香菇泡发切片，鸡肉切块加生抽淀粉腌','热油爆香姜片，下鸡肉炒至变色','加香菇翻炒，加蚝油和泡香菇的水','小火焖8分钟，大火收汁'] },
+  ],
+  dinner: [
+    { name: '菌菇豆腐汤', cal: '~220千卡', ing: '嫩豆腐半盒、香菇3朵、金针菇50g、鸡蛋1个', steps: ['香菇切片，金针菇去根，豆腐切小块','水烧开放入菌菇煮3分钟','加入豆腐再煮2分钟','淋入蛋液成蛋花，加盐和胡椒粉调味'] },
+    { name: '蒜蓉炒时蔬', cal: '~180千卡', ing: '时令青菜300g、蒜末、盐、蚝油', steps: ['青菜洗净切段','热油爆香蒜末至微黄','放入青菜大火快炒1-2分钟','加盐、少许蚝油翻匀出锅'] },
+    { name: '玉米排骨汤', cal: '~350千卡', ing: '排骨200g、玉米1根、胡萝卜1根、姜片、盐', steps: ['排骨焯水去血沫','玉米切段、胡萝卜滚刀块','所有材料入锅加水炖40分钟','加盐调味即可'] },
+    { name: '虾仁滑蛋', cal: '~260千卡', ing: '虾仁150g、鸡蛋3个、葱花、盐、牛奶15ml', steps: ['虾仁加少许盐和淀粉抓匀','鸡蛋加牛奶和盐打散','热油滑炒虾仁至变色，倒入蛋液','小火慢推至蛋液凝固，撒葱花出锅'] },
+    { name: '冬瓜丸子汤', cal: '~240千卡', ing: '冬瓜300g、猪肉馅100g、姜末、葱花、盐', steps: ['肉馅加姜末生抽盐搅上劲','冬瓜去皮切片','水开下丸子煮至浮起','加冬瓜煮5分钟，加盐撒葱花'] },
+    { name: '香菇滑鸡粥', cal: '~300千卡', ing: '大米50g、鸡胸肉100g、香菇4朵、姜丝、盐', steps: ['大米泡30分钟','鸡肉切片腌，香菇切片','大米煮20分钟至开花','加鸡肉香菇煮8分钟，加盐'] },
+    { name: '凉拌黄瓜木耳', cal: '~150千卡', ing: '黄瓜1根、干木耳20g、蒜末、醋、生抽、香油', steps: ['木耳泡发焯水2分钟','黄瓜拍碎切段','调汁拌匀即可'] },
+    { name: '番茄龙利鱼汤', cal: '~250千卡', ing: '龙利鱼柳200g、番茄2个、金针菇、姜片、盐', steps: ['鱼柳切块加盐料酒腌','番茄去皮切块炒出汁','加水煮开，放金针菇和鱼块','鱼变白即可，加盐调味'] },
+    { name: '西芹炒百合', cal: '~200千卡', ing: '西芹200g、鲜百合1个、枸杞、盐、蒜末', steps: ['西芹去筋切段焯水','百合掰片洗净','热油爆香蒜末，下西芹百合大火快炒','加盐和枸杞翻匀出锅'] },
+    { name: '紫菜虾皮汤', cal: '~120千卡', ing: '紫菜、虾皮、鸡蛋1个、葱花、盐、香油', steps: ['水烧开，放虾皮紫菜','淋入蛋液搅散','加盐、几滴香油、葱花'] },
+    { name: '清炒荷兰豆', cal: '~160千卡', ing: '荷兰豆200g、蒜末、盐、胡萝卜片', steps: ['荷兰豆去筋洗净，胡萝卜切片','荷兰豆和胡萝卜焯水1分钟','热油爆香蒜末，大火翻炒','加盐调味出锅'] },
+    { name: '白菜豆腐煲', cal: '~220千卡', ing: '大白菜半颗、豆腐1块、粉丝1小把、姜片、生抽', steps: ['白菜切块，豆腐切片煎至金黄','锅底铺白菜，放豆腐和泡软的粉丝','加水、生抽、姜片煮10分钟','加盐和少许胡椒粉'] },
+    { name: '酸辣汤', cal: '~180千卡', ing: '豆腐、木耳、鸡蛋、香菇、醋、白胡椒粉、淀粉', steps: ['所有材料切丝','水开下豆腐木耳香菇丝','加醋、生抽、白胡椒粉调味','淋蛋液和淀粉水搅匀'] },
+    { name: '蒜蓉西兰花', cal: '~150千卡', ing: '西兰花1颗、蒜末、盐、蚝油', steps: ['西兰花掰小朵焯水1分钟','热油爆香蒜末','下西兰花大火翻炒','加盐和少许蚝油翻匀'] },
+    { name: '莲藕排骨汤', cal: '~380千卡', ing: '排骨200g、莲藕1节、花生30g、姜片、盐', steps: ['排骨焯水，莲藕去皮切块','所有材料入锅加水','大火烧开转小火炖1小时','加盐调味'] },
+    { name: '拍黄瓜', cal: '~120千卡', ing: '黄瓜2根、蒜末、醋、生抽、辣椒油、芝麻', steps: ['黄瓜洗净用刀拍碎，切段','加蒜末、醋1勺、生抽1勺、辣椒油','拌匀撒芝麻，冷藏10分钟更爽口'] },
+    { name: '上汤娃娃菜', cal: '~200千卡', ing: '娃娃菜2颗、皮蛋1个、火腿30g、蒜末、高汤', steps: ['娃娃菜对半切开焯水','皮蛋和火腿切丁','热油炒香蒜末和皮蛋火腿','加高汤煮开，放入娃娃菜煮3分钟'] },
+    { name: '丝瓜炒蛋', cal: '~220千卡', ing: '丝瓜1根、鸡蛋2个、蒜末、盐', steps: ['丝瓜去皮切滚刀块','鸡蛋打散先炒熟盛出','同锅炒丝瓜至变软透明','倒回鸡蛋，加盐翻匀'] },
+    { name: '红烧冬瓜', cal: '~160千卡', ing: '冬瓜400g、生抽、老抽、糖、葱花', steps: ['冬瓜去皮切块','热油将冬瓜煎至微黄','加生抽1勺+老抽半勺+糖+水','焖煮至冬瓜透明入味，撒葱花'] },
+    { name: '萝卜牛腩汤', cal: '~350千卡', ing: '牛腩200g、白萝卜1根、姜片、八角、盐', steps: ['牛腩焯水切块，萝卜去皮切块','牛腩加姜片八角炖1小时','加萝卜再炖30分钟','加盐撒葱花'] },
+    { name: '蚝油生菜', cal: '~130千卡', ing: '生菜300g、蒜末、蚝油、生抽、淀粉', steps: ['生菜洗净焯水10秒摆盘','蒜末爆香，加蚝油生抽和少许水','淋淀粉水勾薄芡','浇在生菜上'] },
+    { name: '番茄炒菜花', cal: '~180千卡', ing: '菜花半颗、番茄1个、蒜末、番茄酱、盐', steps: ['菜花掰小朵焯水','番茄切块炒出汁','加菜花翻炒，加番茄酱和少许水','焖3分钟，加盐调味'] },
+    { name: '鲫鱼豆腐汤', cal: '~280千卡', ing: '鲫鱼1条、豆腐1块、姜片、葱段、盐', steps: ['鲫鱼处理干净，擦干水分','热油煎鱼至两面金黄','加开水和姜片大火煮10分钟至汤白','加豆腐块再煮5分钟，加盐撒葱段'] },
+    { name: '蒜苗炒香干', cal: '~220千卡', ing: '香干3块、蒜苗3根、红椒1个、生抽', steps: ['香干切片，蒜苗切段，红椒切丝','热油将香干煎至微焦','加蒜苗红椒大火翻炒1分钟','加生抽和少许盐调味'] },
+  ]
+};
+
+function generateDiet(dateStr) {
+  // Shuffle array using seeded random and pick first item
+  function pickShuffled(arr, seed) {
+    const rng = seededRandom(seed);
+    const shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled[0];
+  }
+  const b = pickShuffled(dietDB.breakfast, dateStr + 'bk_v2');
+  const l = pickShuffled(dietDB.lunch, dateStr + 'lu_v2');
+  const d = pickShuffled(dietDB.dinner, dateStr + 'dn_v2');
+  return { breakfast: b, lunch: l, dinner: d };
+}
+
+function renderDiet() {
+  const data = generateDiet(getCurrentDate());
+  const meals = [
+    { cls:'breakfast', emoji:'🌅', label:'早餐', ...data.breakfast },
+    { cls:'lunch', emoji:'☀️', label:'午餐', ...data.lunch },
+    { cls:'dinner', emoji:'🌙', label:'晚餐', ...data.dinner },
+  ];
+  // Extract calorie numbers
+  const calB = parseInt(data.breakfast.cal.match(/\d+/)[0]) || 0;
+  const calL = parseInt(data.lunch.cal.match(/\d+/)[0]) || 0;
+  const calD = parseInt(data.dinner.cal.match(/\d+/)[0]) || 0;
+  const calTotal = calB + calL + calD;
+
+  // Calorie summary bar
+  document.getElementById('calorieBar').innerHTML = `
+    <div class="calorie-summary">
+      <div class="cal-total">
+        <div class="cal-num">${calTotal}</div>
+        <div class="cal-label">🔥 今日总热量 (千卡)</div>
+      </div>
+      <div class="cal-divider"></div>
+      <div class="cal-breakdown">
+        <div class="cal-item">
+          <div><span class="cal-dot bk"></span>🌅 早餐</div>
+          <div class="cal-value">${calB}</div>
+          <div class="cal-tag">千卡</div>
+        </div>
+        <div class="cal-item">
+          <div><span class="cal-dot lu"></span>☀️ 午餐</div>
+          <div class="cal-value">${calL}</div>
+          <div class="cal-tag">千卡</div>
+        </div>
+        <div class="cal-item">
+          <div><span class="cal-dot dn"></span>🌙 晚餐</div>
+          <div class="cal-value">${calD}</div>
+          <div class="cal-tag">千卡</div>
+        </div>
+      </div>
+    </div>`;
+
+  let html = '';
+  meals.forEach(m => {
+    html += `<div class="meal-card ${m.cls}">
+      <h3>${m.emoji} ${m.label}</h3>
+      <div class="meal-name">${m.name}</div>
+      <div class="meal-cal">🔥 ${m.cal}</div>
+      <div class="ingredients">🛒 <strong>食材：</strong>${m.ing}</div>
+      <div class="steps"><strong>👩‍🍳 烹饪步骤：</strong>
+        <ol style="padding-left:18px;">${m.steps.map(s => `<li>${s}</li>`).join('')}</ol>
+      </div>
+    </div>`;
+  });
+  document.getElementById('dietContent').innerHTML = html;
+
+  // Nutrition tips
+  const tips = [
+    { emoji:'💡', text:`今日总摄入约 <b>${calTotal}千卡</b>，成年女性日均推荐摄入1800-2200千卡，${calTotal < 1500 ? '可适当加餐补充能量' : calTotal > 1800 ? '注意控制零食和饮料摄入' : '热量搭配很均衡哦～'}` },
+    { emoji:'🥗', text:'建议每餐搭配：主食(拳头大小) + 蛋白质(掌心大小) + 蔬菜(双手捧)，营养更全面' },
+    { emoji:'💧', text:'全天建议饮水1500-2000ml，约8杯水，饭前一杯水有助于控制食量' },
+  ];
+  const rng2 = seededRandom(getCurrentDate() + 'tips');
+  const pickedTips = [...tips].sort(() => rng2() - 0.5).slice(0, 2);
+  const quoteIndex = Math.floor(seededRandom(getCurrentDate() + 'quote')() * dietQuotes.length);
+  const dailyQuote = dietQuotes[quoteIndex];
+
+  document.getElementById('dietTips').innerHTML = `<h3>📋 今日饮食小建议</h3>` +
+    pickedTips.map(t => `<div style="padding:8px 0;font-size:13px;line-height:1.8;border-bottom:1px dashed #fddde6;">${t.emoji} ${t.text}</div>`).join('') +
+    `<div style="padding:8px 0;font-size:13px;line-height:1.8;">🍎 每餐热量已标注在食谱卡片中，切换日期可查看不同推荐～</div>` +
+    `<div style="margin-top:12px;padding:14px 16px;background:linear-gradient(135deg,#fff0f5,#ffe0ea);border-radius:14px;text-align:center;font-size:14px;color:var(--pink-deep);line-height:1.8;box-shadow:0 2px 10px rgba(231,84,128,0.08);">` +
+    `<div style="font-size:18px;margin-bottom:6px;">✨</div>` +
+    `<div style="font-weight:600;">每日语录</div>` +
+    `<div style="margin-top:6px;font-style:italic;opacity:0.95;">"${dailyQuote}"</div>` +
+    `</div>`;
+}
+
+const dietQuotes = [
+  '好好吃饭，是对生活最基本的尊重。',
+  '你吃进去的每一口，都会变成明天的自己。',
+  '饮食有度，人生有光。',
+  '今天也要认真吃饭，认真爱自己。',
+  '食物是身体的燃料，不是情绪的出口。',
+  '吃得干净，长得漂亮。',
+  '生活的仪式感，从认真准备一餐开始。',
+  '偶尔放纵可以，但别忘了长久地爱自己。',
+  '每一顿用心的饭，都是在给身体充电。',
+  '不节食、不暴食，温柔地对待自己的胃。',
+  '美食和好身材，从来不是对立面。',
+  '愿你既有火锅的快乐，也有沙拉的清爽。',
+  '吃饭是为了活着，活着是为了更好地吃饭。',
+  '控制食欲，不控制对生活的热爱。',
+  '健康的身体，是一切美好的开始。',
+  '细嚼慢咽，是对食物最大的尊重。',
+  '今天的水喝够了吗？记得让身体也喝饱哦。',
+  '七分饱，刚刚好；留三分，给好心情。',
+  '饮食均衡的人，运气都不会太差。',
+  '你不是在减肥，你是在选择一种更轻盈的生活。',
+  '饥饿时进食，饱足时停下，聆听身体的声音。',
+  ' rainbow plate，彩色餐盘，彩色心情。',
+  '少油少盐不是苦，是对自己的温柔。',
+  '别让今天的偷懒，变成明天的遗憾。',
+  '好好吃饭，慢慢变好。',
+  '吃得对，睡得香，皮肤自然亮。',
+  '自律不是痛苦，是自由。',
+  '把健康当成一种生活方式，而不是一时兴起。',
+  '每一餐都值得被温柔以待。',
+  '爱自己，从一顿营养均衡的饭开始。'
+];
+const skincareDB = {
+  morning: [
+    { name: '温和洁面', desc: '用氨基酸洁面乳，温水洗脸30秒' },
+    { name: '爽肤水', desc: '轻拍保湿型爽肤水至吸收' },
+    { name: '精华液', desc: '取3-4滴VC精华，从内向外涂抹' },
+    { name: '眼霜', desc: '点涂眼周，用无名指轻拍' },
+    { name: '面霜/乳液', desc: '取珍珠大小均匀涂抹全脸' },
+    { name: '防晒霜', desc: '出门前20分钟涂抹，一元硬币大小用量' },
+  ],
+  evening: [
+    { name: '卸妆', desc: '干手干脸用卸妆油/膏打圈按摩，乳化后洗净' },
+    { name: '洁面', desc: '氨基酸洁面二次清洁' },
+    { name: '爽肤水', desc: '用化妆棉轻擦做二次清洁' },
+    { name: '精华液', desc: '夜间修护精华或A醇精华' },
+    { name: '眼霜', desc: '滋润型眼霜点涂按摩' },
+    { name: '面霜', desc: '晚间修护面霜，可厚涂做睡眠面膜' },
+  ],
+  tips: [
+    ['💧 补水黄金时间', '洗完脸3分钟内是补水最佳时机，不要等脸完全干透再护肤'],
+    ['🧊 冰敷消肿', '早上水肿可用冰勺子敷眼周30秒，消肿效果显著'],
+    ['💤 美容觉', '晚上11点到凌晨2点是皮肤修复黄金期，尽量在11点前入睡'],
+    ['🥒 饮食护肤', '多吃富含VC的水果（猕猴桃、橙子）和胶原蛋白食物（银耳、猪蹄）'],
+    ['🚰 喝够水', '每天至少喝1.5L水，小口多次比一次性灌效果更好'],
+    ['🧹 定期清洁', '每周1-2次深层清洁面膜，但不要过度清洁破坏皮肤屏障'],
+    ['✋ 不摸脸', '手上细菌很多，改掉下意识摸脸的习惯'],
+    ['🔄 枕套勤换', '建议每周换一次枕套，减少细菌滋生'],
+  ]
+};
+
+function getSkincareKey() { return 'skincare_data'; }
+
+function loadSkincare(dateStr) {
+  const all = JSON.parse(localStorage.getItem(getSkincareKey()) || '{}');
+  if (all[dateStr]) return all[dateStr];
+
+  // Migrate old simple checked-state storage if exists
+  const oldKey = 'skincare_' + dateStr;
+  const oldSaved = JSON.parse(localStorage.getItem(oldKey) || '{}');
+  const fresh = {
+    morning: skincareDB.morning.map((it, i) => ({ ...it, checked: !!oldSaved['m_' + i] })),
+    evening: skincareDB.evening.map((it, i) => ({ ...it, checked: !!oldSaved['e_' + i] })),
+  };
+  all[dateStr] = fresh;
+  localStorage.setItem(getSkincareKey(), JSON.stringify(all));
+  return fresh;
+}
+
+function saveSkincare(dateStr, data) {
+  const all = JSON.parse(localStorage.getItem(getSkincareKey()) || '{}');
+  all[dateStr] = data;
+  localStorage.setItem(getSkincareKey(), JSON.stringify(all));
+}
+
+function generateSkincareTips(dateStr) {
+  const rng = seededRandom(dateStr + 'skin');
+  const tipIndices = [];
+  while (tipIndices.length < 3) {
+    const idx = Math.floor(rng() * skincareDB.tips.length);
+    if (!tipIndices.includes(idx)) tipIndices.push(idx);
+  }
+  return tipIndices.map(i => skincareDB.tips[i]);
+}
+
+function renderSkincare() {
+  const dateStr = getCurrentDate();
+  const data = loadSkincare(dateStr);
+  const tips = generateSkincareTips(dateStr);
+
+  const renderSection = (type, emoji, title) => {
+    const items = data[type] || [];
+    let html = `<div class="skincare-section">
+      <h3><span class="sec-title">${emoji} ${title}</span><button class="sec-add" data-type="${type}">+ 添加</button></h3>`;
+
+    html += `<div class="skincare-list" id="skinList-${type}">`;
+    items.forEach((item, i) => {
+      html += `<div class="checklist-item" data-type="${type}" data-idx="${i}">
+        <div class="check-box${item.checked ? ' checked' : ''}">${item.checked ? '✓' : ''}</div>
+        <div class="sk-text${item.checked ? ' done' : ''}"><strong>${escapeHtml(item.name)}：</strong>${escapeHtml(item.desc)}</div>
+        <div class="sk-actions">
+          <button class="btn-edit" title="编辑">✏️</button>
+          <button class="btn-del" title="删除">🗑️</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+
+    html += `<div class="skincare-form" id="skinForm-${type}" style="display:none;">
+      <input type="text" id="skinName-${type}" placeholder="步骤名称，如：精华">
+      <input type="text" id="skinDesc-${type}" placeholder="详细说明，如：取2滴轻拍至吸收">
+      <div class="sk-form-actions">
+        <button class="btn-confirm" data-type="${type}">确认</button>
+        <button class="btn-cancel" data-type="${type}">取消</button>
+      </div>
+    </div>`;
+
+    html += `</div>`;
+    return html;
+  };
+
+  let html = '';
+  html += renderSection('morning', '🌅', '晨间护肤流程');
+  html += renderSection('evening', '🌙', '夜间护肤流程');
+  html += `<div class="card">
+    <h3>💡 今日护肤小贴士</h3>
+    ${tips.map(t => `<div class="tip-badge">${t[0]} ${t[1]}</div>`).join('')}
+  </div>`;
+
+  document.getElementById('skincareContent').innerHTML = html;
+
+  // Toggle check
+  document.querySelectorAll('.skincare-list .check-box').forEach(box => {
+    box.addEventListener('click', function() {
+      const row = this.closest('.checklist-item');
+      const type = row.dataset.type;
+      const idx = parseInt(row.dataset.idx);
+      const data = loadSkincare(dateStr);
+      data[type][idx].checked = !data[type][idx].checked;
+      saveSkincare(dateStr, data);
+      this.classList.toggle('checked');
+      this.textContent = data[type][idx].checked ? '✓' : '';
+      row.querySelector('.sk-text').classList.toggle('done');
+    });
+  });
+
+  // Add button
+  document.querySelectorAll('.sec-add').forEach(btn => {
+    btn.addEventListener('click', () => showSkinAddForm(btn.dataset.type));
+  });
+
+  // Edit / Delete (event delegation for reliability)
+  const skinContainer = document.getElementById('skincareContent');
+  skinContainer.querySelectorAll('.btn-edit').forEach(btn => {
+    const old = btn.cloneNode(true);
+    btn.parentNode.replaceChild(old, btn);
+  });
+  skinContainer.querySelectorAll('.btn-del').forEach(btn => {
+    const old = btn.cloneNode(true);
+    btn.parentNode.replaceChild(old, btn);
+  });
+  skinContainer.addEventListener('click', function skinClickHandler(e) {
+    const delBtn = e.target.closest('.btn-del');
+    const editBtn = e.target.closest('.btn-edit');
+    if (!delBtn && !editBtn) return;
+    const row = (delBtn || editBtn).closest('.checklist-item');
+    if (!row) return;
+    const type = row.dataset.type;
+    const idx = parseInt(row.dataset.idx);
+    if (delBtn) {
+      if (!confirm('确定删除这条护肤步骤吗？')) return;
+      const data = loadSkincare(dateStr);
+      data[type].splice(idx, 1);
+      saveSkincare(dateStr, data);
+      renderSkincare();
+    } else {
+      enterSkinEditMode(row);
+    }
+  });
+
+  // Add form buttons
+  document.querySelectorAll('#skincareContent .skincare-form .btn-confirm').forEach(btn => {
+    btn.addEventListener('click', () => confirmSkinAdd(btn.dataset.type));
+  });
+  document.querySelectorAll('#skincareContent .skincare-form .btn-cancel').forEach(btn => {
+    btn.addEventListener('click', () => hideSkinAddForm(btn.dataset.type));
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function showSkinAddForm(type) {
+  document.getElementById('skinForm-' + type).style.display = 'flex';
+  document.getElementById('skinName-' + type).focus();
+}
+function hideSkinAddForm(type) {
+  document.getElementById('skinForm-' + type).style.display = 'none';
+  document.getElementById('skinName-' + type).value = '';
+  document.getElementById('skinDesc-' + type).value = '';
+}
+function confirmSkinAdd(type) {
+  const name = document.getElementById('skinName-' + type).value.trim();
+  const desc = document.getElementById('skinDesc-' + type).value.trim();
+  if (!name) return alert('请输入步骤名称');
+  const data = loadSkincare(getCurrentDate());
+  data[type].push({ name, desc, checked: false });
+  saveSkincare(getCurrentDate(), data);
+  renderSkincare();
+}
+
+function enterSkinEditMode(row) {
+  const type = row.dataset.type;
+  const idx = parseInt(row.dataset.idx);
+  const data = loadSkincare(getCurrentDate());
+  const item = data[type][idx];
+
+  row.innerHTML = `
+    <div style="flex:1;display:flex;gap:8px;flex-direction:column;">
+      <input type="text" id="skinEditName-${type}-${idx}" value="${escapeHtml(item.name)}" placeholder="步骤名称" style="padding:8px 10px;border:1px solid var(--border);border-radius:10px;font-size:13px;">
+      <input type="text" id="skinEditDesc-${type}-${idx}" value="${escapeHtml(item.desc)}" placeholder="详细说明" style="padding:8px 10px;border:1px solid var(--border);border-radius:10px;font-size:13px;">
+    </div>
+    <div class="sk-actions" style="opacity:1;flex-direction:column;">
+      <button class="btn-save-edit" style="background:#fff0f5;color:var(--pink-deep);">✓</button>
+      <button class="btn-cancel-edit" style="background:#f5f5f5;color:#999;">✕</button>
+    </div>
+  `;
+
+  row.querySelector('.btn-save-edit').addEventListener('click', () => {
+    const newName = document.getElementById(`skinEditName-${type}-${idx}`).value.trim();
+    const newDesc = document.getElementById(`skinEditDesc-${type}-${idx}`).value.trim();
+    if (!newName) return alert('请输入步骤名称');
+    data[type][idx].name = newName;
+    data[type][idx].desc = newDesc;
+    saveSkincare(getCurrentDate(), data);
+    renderSkincare();
+  });
+  row.querySelector('.btn-cancel-edit').addEventListener('click', () => renderSkincare());
+}
+
+// ==================== WORKOUT DATA ====================
+const WORKOUT_KEY = 'life_workout_data';
+const WORKOUT_PRESETS = [
+  { name:'HIIT燃脂', sets:'1', reps:'30分钟', cal:275 },
+  { name:'核心训练', sets:'3', reps:'组循环', cal:150 },
+  { name:'深蹲', sets:'4', reps:'15次', cal:42 },
+  { name:'平板支撑', sets:'3', reps:'60秒', cal:81 },
+  { name:'瑜伽拉伸', sets:'1', reps:'20分钟', cal:92 },
+  { name:'跳绳', sets:'1', reps:'500个', cal:225 },
+  { name:'开合跳', sets:'3', reps:'30次', cal:41 },
+  { name:'臀桥', sets:'3', reps:'20次', cal:42 },
+  { name:'俯卧撑', sets:'3', reps:'12次', cal:20 },
+  { name:'卷腹', sets:'3', reps:'20次', cal:24 },
+];
+
+function getUserWeight() {
+  const bodyAll = loadBodyData();
+  const dates = Object.keys(bodyAll).filter(d => bodyAll[d] && bodyAll[d].weight).sort();
+  if (dates.length > 0) {
+    return parseFloat(bodyAll[dates[dates.length - 1]].weight) || 55;
+  }
+  return 55;
+}
+
+function estimateCalories(name, sets, reps, weightKg) {
+  const nameLower = (name || '').toLowerCase();
+  const repsLower = (reps || '').toLowerCase();
+  const setsNum = Math.max(1, parseInt(sets) || 1);
+  const bw = weightKg || getUserWeight() || 55;
+
+  // Aerobic by minutes
+  const minMatch = repsLower.match(/(\d+(?:\.\d+)?)\s*(分钟|分|min)/);
+  if (minMatch) {
+    const mins = parseFloat(minMatch[1]);
+    return Math.round(getMetValue(nameLower) * bw * (mins / 60));
+  }
+
+  // By hours
+  const hourMatch = repsLower.match(/(\d+(?:\.\d+)?)\s*(小时|时|h)/);
+  if (hourMatch) {
+    return Math.round(getMetValue(nameLower) * bw * parseFloat(hourMatch[1]));
+  }
+
+  // Static hold by seconds (plank, wall sit, etc.)
+  const secMatch = repsLower.match(/(\d+)\s*(秒|s)/);
+  if (secMatch) {
+    if (nameLower.includes('平板') || nameLower.includes('静蹲') || nameLower.includes('靠墙')) {
+      return Math.round(setsNum * getKcalPerSet(nameLower) * bw / 55);
+    }
+    const secs = parseInt(secMatch[1]);
+    return Math.round(getMetValue(nameLower) * bw * (secs * setsNum / 3600));
+  }
+
+  // Reps/count
+  const countMatch = repsLower.match(/(\d+)\s*(次|个|下)/);
+  if (countMatch) {
+    const count = parseInt(countMatch[1]);
+    return Math.round(count * setsNum * getKcalPerRep(nameLower) * bw / 55);
+  }
+
+  // Plain number fallback (e.g. "12", "15") — treat as reps
+  const plainNumberMatch = repsLower.match(/^(\d+)$/);
+  if (plainNumberMatch) {
+    const count = parseInt(plainNumberMatch[1]);
+    return Math.round(count * setsNum * getKcalPerRep(nameLower) * bw / 55);
+  }
+
+  // Sets/circuits without explicit reps
+  const setMatch = repsLower.match(/(\d+)?\s*(组|循环)/);
+  if (setMatch) {
+    return Math.round(setsNum * getKcalPerSet(nameLower) * bw / 55);
+  }
+
+  return 0;
+}
+
+function getMetValue(name) {
+  if (name.includes('hiit') || name.includes('跳绳') || name.includes('波比') || name.includes('开合跳')) return 10;
+  if (name.includes('跑步') || name.includes('慢跑') || name.includes('快走')) return 8;
+  if (name.includes('游泳') || name.includes('骑车') || name.includes('骑行') || name.includes('登山')) return 7;
+  if (name.includes('舞蹈') || name.includes('有氧操') || name.includes('搏击')) return 6;
+  if (name.includes('深蹲') || name.includes('弓步') || name.includes('登山跑') || name.includes('硬拉')) return 5;
+  if (name.includes('平板') || name.includes('核心') || name.includes('俯卧撑') || name.includes('卷腹')) return 4;
+  if (name.includes('瑜伽') || name.includes('拉伸') || name.includes('普拉提')) return 5;
+  return 5;
+}
+
+function getKcalPerRep(name) {
+  if (name.includes('深蹲') || name.includes('弓步') || name.includes('臀桥') || name.includes('硬拉')) return 0.7;
+  if (name.includes('俯卧撑') || name.includes('卧推') || name.includes('划船') || name.includes('高位下拉') || name.includes('引体')) return 0.55;
+  if (name.includes('卷腹') || name.includes('平板') || name.includes('俄罗斯转体') || name.includes('死虫')) return 0.4;
+  if (name.includes('跳绳') || name.includes('开合跳') || name.includes('波比')) return 0.45;
+  return 0.45;
+}
+
+function getKcalPerSet(name) {
+  if (name.includes('平板') || name.includes('静蹲') || name.includes('靠墙')) return 27;
+  if (name.includes('核心') || name.includes('卷腹') || name.includes('俄罗斯转体')) return 50;
+  if (name.includes('深蹲') || name.includes('弓步') || name.includes('臀桥') || name.includes('硬拉')) return 25;
+  if (name.includes('俯卧撑') || name.includes('卧推') || name.includes('划船')) return 20;
+  return 20;
+}
+
+function formatWorkoutMeta(item) {
+  if (item.meta && !item.sets && !item.reps) return item.meta;
+  if (item.sets && item.reps) return `${item.sets}组 · ${item.reps}`;
+  if (item.reps) return item.reps;
+  if (item.meta) return item.meta;
+  return '';
+}
+
+function loadWorkouts() {
+  try { return JSON.parse(localStorage.getItem(WORKOUT_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveWorkouts(data) { localStorage.setItem(WORKOUT_KEY, JSON.stringify(data)); }
+function getWorkout(dateStr) {
+  const all = loadWorkouts();
+  return all[dateStr] || { items: [] };
+}
+function setWorkout(dateStr, data) {
+  const all = loadWorkouts();
+  all[dateStr] = data;
+  saveWorkouts(all);
+}
+
+function renderWorkout() {
+  seedDefaultWorkout(getCurrentDate());
+  const dateStr = getCurrentDate();
+  const data = getWorkout(dateStr);
+
+  // Recalculate calories for existing items when formula changes or value is 0
+  let recalcDirty = false;
+  data.items.forEach(it => {
+    const recal = estimateCalories(it.name, it.sets, it.reps);
+    if (recal !== (it.cal || 0)) {
+      it.cal = recal;
+      recalcDirty = true;
+    }
+  });
+  if (recalcDirty) {
+    setWorkout(dateStr, data);
+  }
+
+  const totalCal = data.items.reduce((sum, it) => sum + (it.checked ? (it.cal || 0) : 0), 0);
+  const plannedCal = data.items.reduce((sum, it) => sum + (it.cal || 0), 0);
+  const doneCount = data.items.filter(it => it.checked).length;
+  const isRest = data.items.length === 0;
+  const progressPct = plannedCal > 0 ? Math.round(totalCal / plannedCal * 100) : 0;
+
+  // Calorie summary card — horizontal layout with inline styles
+  const cardStyle = 'display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#fff;border-radius:20px;padding:18px 24px;box-shadow:0 2px 16px rgba(0,0,0,0.05);margin-bottom:18px;';
+  const blockStyle = 'display:flex;flex-direction:column;';
+  const labelStyle = 'font-size:12px;color:#c4a0ae;font-weight:500;';
+  const valueStyle = 'font-size:34px;font-weight:800;color:#d4687c;line-height:1.1;';
+  const dividerStyle = 'width:1px;height:40px;background:#f0dce2;border-radius:1px;flex-shrink:0;';
+  const progressStyle = 'flex:1;min-width:150px;';
+  const progressTextStyle = 'font-size:13px;color:#9e7d87;line-height:1.6;';
+  const barBgStyle = 'height:5px;background:#f5e8ec;border-radius:3px;margin-top:6px;overflow:hidden;';
+  const barFillStyle = 'height:100%;background:linear-gradient(90deg,#eeb0be,#d4687c);border-radius:3px;transition:width 0.3s;';
+  const badgeStyle = 'background:#fef5f7;color:#d4687c;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;';
+
+  document.getElementById('workoutCalCard').innerHTML = isRest ? `
+    <div style="${cardStyle}">
+      <div style="${blockStyle}">
+        <div style="${labelStyle}">今日训练</div>
+        <div style="font-size:22px;font-weight:800;color:#d4687c;line-height:1.1;">休息日 ♨️</div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="background:#fff;color:#c4a0ae;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;">REST DAY</div>
+    </div>
+  ` : `
+    <div style="${cardStyle}">
+      <div style="${blockStyle}">
+        <div style="${labelStyle}">预计消耗</div>
+        <div style="${valueStyle}">${plannedCal}<span style="font-size:14px;font-weight:500;color:#c4a0ae;margin-left:2px;">千卡</span></div>
+      </div>
+      <div style="${dividerStyle}"></div>
+      <div style="${progressStyle}">
+        <div style="${progressTextStyle}">已完成 ${totalCal} 千卡 · ${doneCount}/${data.items.length} 项打卡</div>
+        <div style="${barBgStyle}"><div style="${barFillStyle};width:${progressPct}%;"></div></div>
+      </div>
+      <div style="${badgeStyle}">${totalCal >= plannedCal * 0.8 ? '目标达成 ✨' : '继续加油 💪'}</div>
+    </div>
+  `;
+
+  // Daily training list
+  let html = `<div class="workout-day-card">`;
+  html += `<div class="workout-day-header">
+    <h3>📝 当日训练清单</h3>
+    <div class="day-status ${doneCount === data.items.length && data.items.length > 0 ? 'done' : ''}">${isRest ? '休息日' : `${doneCount}/${data.items.length} 完成`}</div>
+  </div>`;
+
+  if (isRest) {
+    html += `<div class="rest-placeholder">🌙 今天是休息日，给身体放个假吧～<br>点击下方按钮可以添加训练哦</div>`;
+  } else {
+    html += data.items.map((it, i) => `
+      <div class="ex-item">
+        <input type="checkbox" ${it.checked ? 'checked' : ''} data-idx="${i}">
+        <div class="ex-info ${it.checked ? 'done' : ''}">
+          <div class="ex-name">${it.name}</div>
+          <div class="ex-meta">${formatWorkoutMeta(it)}</div>
+        </div>
+        <div class="ex-cal">🔥 ${it.cal || 0}千卡</div>
+        <button class="btn-del-ex" data-idx="${i}">×</button>
+      </div>
+    `).join('');
+  }
+
+  html += `
+    <div class="day-actions">
+      <button class="primary" id="btnShowAddForm">+ 添加训练</button>
+      ${!isRest ? `<button id="btnClearWorkout">清空当天</button>` : ''}
+    </div>
+    <div class="add-ex-form" id="addForm-daily">
+      <input type="text" id="exName-daily" placeholder="训练名称，如：跳绳">
+      <div class="form-row">
+        <input type="text" id="exSets-daily" placeholder="组数，如：3">
+        <input type="text" id="exReps-daily" placeholder="次数/时长，如：15次 或 30分钟">
+      </div>
+      <div style="font-size:12px;color:#c4a0ae;padding:2px 2px 6px;">💡 填写名称、组数和次数/时长后，系统会自动估算消耗千卡</div>
+      <div class="form-actions">
+        <button class="btn-confirm" id="btnConfirmAdd">确认添加</button>
+        <button class="btn-cancel" id="btnCancelAdd">取消</button>
+      </div>
+    </div>
+  </div>`;
+
+  html += `<div class="card" style="margin-top:18px;font-size:13px;line-height:1.8;color:var(--text-light);">
+    💡 切换顶部日期可查看任意一天的训练安排；不设置训练即为休息日；勾选后顶部卡路里会实时更新。
+  </div>`;
+
+  document.getElementById('workoutContent').innerHTML = html;
+
+  // Bind checkbox events
+  document.querySelectorAll('.ex-item input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const idx = parseInt(this.dataset.idx);
+      const data = getWorkout(dateStr);
+      data.items[idx].checked = this.checked;
+      setWorkout(dateStr, data);
+      renderWorkout();
+    });
+  });
+
+  // Bind delete events (event delegation)
+  const workoutContainer = document.getElementById('workoutContent');
+  workoutContainer.addEventListener('click', function workoutDelHandler(e) {
+    const delBtn = e.target.closest('.btn-del-ex');
+    if (!delBtn) return;
+    const idx = parseInt(delBtn.dataset.idx);
+    if (isNaN(idx)) return;
+    const data = getWorkout(dateStr);
+    data.items.splice(idx, 1);
+    setWorkout(dateStr, data);
+    renderWorkout();
+  });
+
+  // Bind "清空当天" button
+  const btnClear = document.getElementById('btnClearWorkout');
+  if (btnClear) {
+    btnClear.addEventListener('click', function() {
+      if (!confirm('确定清空这一天的训练安排吗？')) return;
+      setWorkout(dateStr, { items: [] });
+      renderWorkout();
+    });
+  }
+
+  // Bind "添加训练" button
+  const btnShowAdd = document.getElementById('btnShowAddForm');
+  if (btnShowAdd) {
+    btnShowAdd.addEventListener('click', () => showAddForm('daily'));
+  }
+
+  // Bind add form confirm/cancel buttons
+  const btnConfirm = document.getElementById('btnConfirmAdd');
+  const btnCancel = document.getElementById('btnCancelAdd');
+  if (btnConfirm) {
+    btnConfirm.addEventListener('click', () => addWorkoutItem('daily'));
+  }
+  if (btnCancel) {
+    btnCancel.addEventListener('click', () => hideAddForm('daily'));
+  }
+}
+
+function showAddForm(key) {
+  document.getElementById('addForm-' + key).classList.add('active');
+}
+function hideAddForm(key) {
+  document.getElementById('addForm-' + key).classList.remove('active');
+}
+function addWorkoutItem(key) {
+  const dateStr = getCurrentDate();
+  const name = document.getElementById('exName-' + key).value.trim();
+  const sets = document.getElementById('exSets-' + key).value.trim();
+  const reps = document.getElementById('exReps-' + key).value.trim();
+  if (!name) return alert('请输入训练名称');
+  if (!reps) return alert('请输入次数或时长');
+  const cal = estimateCalories(name, sets, reps);
+  const data = getWorkout(dateStr);
+  data.items.push({ name, sets, reps, cal, checked: false });
+  setWorkout(dateStr, data);
+  renderWorkout();
+}
+function clearWorkoutDay(dateStr) {
+  if (!confirm('确定清空这一天的训练安排吗？')) return;
+  setWorkout(dateStr, { items: [] });
+  renderWorkout();
+}
+
+// Seed a default plan for today if empty (one-time hint)
+function seedDefaultWorkout(dateStr) {
+  const all = loadWorkouts();
+  if (all[dateStr] || Object.keys(all).length > 0) return;
+  const rng = seededRandom(dateStr + 'workseed');
+  const shuffled = [...WORKOUT_PRESETS].sort(() => rng() - 0.5);
+  all[dateStr] = { items: shuffled.slice(0, 3).map(it => ({ ...it, checked: false })) };
+  saveWorkouts(all);
+}
+
+// ==================== PROFILE ENGINE ====================
+const PROFILE_KEY = 'life_profile_data';
+const BODY_KEY = 'life_body_data';
+
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveProfile(data) { localStorage.setItem(PROFILE_KEY, JSON.stringify(data)); }
+
+function loadBodyData() {
+  try { return JSON.parse(localStorage.getItem(BODY_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveBodyData(data) { localStorage.setItem(BODY_KEY, JSON.stringify(data)); }
+
+function updateSidebarProfile() {
+  const profile = loadProfile();
+  const sAvatarEmoji = document.getElementById('sidebarAvatarEmoji');
+  const sAvatarImg = document.getElementById('sidebarAvatarImg');
+  const sNickname = document.getElementById('sidebarNickname');
+  if (profile.avatar) {
+    sAvatarImg.src = profile.avatar;
+    sAvatarImg.style.display = 'block';
+    sAvatarEmoji.style.display = 'none';
+  } else {
+    sAvatarImg.style.display = 'none';
+    sAvatarEmoji.style.display = 'block';
+    sAvatarEmoji.textContent = profile.avatarEmoji || '🎀';
+  }
+  sNickname.textContent = profile.nickname || 'Hello Kitty';
+}
+
+function getLatestBodyData() {
+  const bodyAll = loadBodyData();
+  const sortedDates = Object.keys(bodyAll).sort().reverse();
+  for (const date of sortedDates) {
+    const b = bodyAll[date];
+    if (b && Object.keys(b).length > 0) return b;
+  }
+  return {};
+}
+
+function renderProfile() {
+  const profile = loadProfile();
+  const bodyAll = loadBodyData();
+  const todayBody = bodyAll[getCurrentDate()] || {};
+  const displayBody = { ...getLatestBodyData(), ...todayBody };
+
+  // Sync sidebar
+  updateSidebarProfile();
+
+  // Avatar
+  const avatarWrap = document.getElementById('avatarWrap');
+  const avatarEmoji = document.getElementById('avatarEmoji');
+  const avatarImg = document.getElementById('avatarImg');
+  if (profile.avatar) {
+    avatarImg.src = profile.avatar;
+    avatarImg.style.display = 'block';
+    avatarEmoji.style.display = 'none';
+  } else {
+    avatarImg.style.display = 'none';
+    avatarEmoji.style.display = 'block';
+    avatarEmoji.textContent = profile.avatarEmoji || '🙂';
+  }
+
+  // Nickname & sign
+  document.getElementById('displayNickname').textContent = profile.nickname || '未设置昵称';
+  document.getElementById('displaySign').textContent = profile.sign || '点击编辑个人信息 ✨';
+
+  // Body stats (fall back to the latest historical record when today is empty)
+  const stats = [
+    { emoji:'📏', label:'身高', key:'height', unit:'cm', val: displayBody.height || '-' },
+    { emoji:'⚖️', label:'体重', key:'weight', unit:'kg', val: displayBody.weight || '-' },
+    { emoji:'💧', label:'体脂率', key:'bodyFat', unit:'%', val: displayBody.bodyFat || '-' },
+    { emoji:'👚', label:'胸围', key:'bust', unit:'cm', val: displayBody.bust || '-' },
+    { emoji:'🩱', label:'腰围', key:'waist', unit:'cm', val: displayBody.waist || '-' },
+    { emoji:'👖', label:'臀围', key:'hip', unit:'cm', val: displayBody.hip || '-' },
+  ];
+  document.getElementById('bodyStats').innerHTML = stats.map(s => `
+    <div class="body-stat-card">
+      <div class="stat-emoji">${s.emoji}</div>
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value">${s.val} <span class="stat-unit">${s.unit}</span></div>
+    </div>
+  `).join('');
+
+  // History
+  const historyContainer = document.getElementById('statHistory');
+  const monthPicker = document.getElementById('bodyMonthPicker');
+  if (!monthPicker.value) monthPicker.value = getCurrentDate().substring(0, 7);
+  const selectedMonth = monthPicker.value;
+
+  const sortedDates = Object.keys(bodyAll).sort().reverse();
+  const monthDates = sortedDates.filter(d => d.startsWith(selectedMonth));
+  if (sortedDates.length > 0) {
+    historyContainer.style.display = 'block';
+    if (monthDates.length === 0) {
+      document.getElementById('statHistoryList').innerHTML = `
+        <div class="empty-state" style="padding:24px 12px;">
+          <div class="empty-emoji">📝</div>
+          <div>这个月还没有身体数据记录哦～</div>
+        </div>`;
+    } else {
+      document.getElementById('statHistoryList').innerHTML = monthDates.map(date => {
+        const b = bodyAll[date];
+        const parts = [];
+        if (b.weight) parts.push(`⚖️${b.weight}kg`);
+        if (b.bodyFat) parts.push(`💧${b.bodyFat}%`);
+        if (b.bust) parts.push(`👚${b.bust}`);
+        if (b.waist) parts.push(`🩱${b.waist}`);
+        if (b.hip) parts.push(`👖${b.hip}`);
+        return `<div class="stat-record">
+          <span class="record-date">📅 ${date}</span>
+          <span class="record-values">${parts.join('  ') || '仅身高'}</span>
+        </div>`;
+      }).join('');
+    }
+  } else {
+    historyContainer.style.display = 'none';
+  }
+}
+
+// Avatar upload → open crop modal
+let cropInstance = null;
+
+document.getElementById('avatarInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Validate type
+  if (!file.type.startsWith('image/')) { alert('请选择图片文件'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const cropImage = document.getElementById('cropImage');
+    cropImage.src = ev.target.result;
+
+    // Show modal
+    document.getElementById('cropOverlay').classList.add('show');
+
+    // Init cropper (destroy previous if any)
+    if (cropInstance) { cropInstance.destroy(); cropInstance = null; }
+    cropInstance = new Cropper(cropImage, {
+      aspectRatio: 1,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 1,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      background: false,
+      guides: true,
+      center: true,
+      responsive: true,
+    });
+  };
+  reader.readAsDataURL(file);
+
+  // Reset input so same file can be re-selected
+  this.value = '';
+});
+
+// Cancel crop
+function closeCropModal() {
+  if (cropInstance) { cropInstance.destroy(); cropInstance = null; }
+  document.getElementById('cropOverlay').classList.remove('show');
+}
+
+// Nickname inline edit
+document.getElementById('displayNickname').addEventListener('click', function() {
+  const profile = loadProfile();
+  const newName = prompt('请输入昵称：', profile.nickname || '');
+  if (newName !== null) {
+    profile.nickname = newName.trim();
+    saveProfile(profile);
+    renderProfile();
+  }
+});
+
+// Open profile edit modal
+document.getElementById('btnEditProfile').addEventListener('click', function() {
+  const profile = loadProfile();
+  const bodyAll = loadBodyData();
+  const todayBody = bodyAll[getCurrentDate()] || {};
+  const editBody = { ...getLatestBodyData(), ...todayBody };
+
+  document.getElementById('editNickname').value = profile.nickname || '';
+  document.getElementById('editSign').value = profile.sign || '';
+  document.getElementById('editHeight').value = editBody.height || '';
+  document.getElementById('editWeight').value = editBody.weight || '';
+  document.getElementById('editBodyFat').value = editBody.bodyFat || '';
+  document.getElementById('editBust').value = editBody.bust || '';
+  document.getElementById('editWaist').value = editBody.waist || '';
+  document.getElementById('editHip').value = editBody.hip || '';
+  document.getElementById('profileModal').style.display = 'flex';
+});
+
+document.getElementById('btnCancelProfile').addEventListener('click', function() {
+  document.getElementById('profileModal').style.display = 'none';
+});
+
+document.getElementById('btnSaveProfile').addEventListener('click', function() {
+  const profile = loadProfile();
+  profile.nickname = document.getElementById('editNickname').value.trim();
+  profile.sign = document.getElementById('editSign').value.trim();
+  saveProfile(profile);
+
+  const bodyAll = loadBodyData();
+  const h = document.getElementById('editHeight').value;
+  const w = document.getElementById('editWeight').value;
+  const bf = document.getElementById('editBodyFat').value;
+  const bu = document.getElementById('editBust').value;
+  const wa = document.getElementById('editWaist').value;
+  const hi = document.getElementById('editHip').value;
+
+  const body = {};
+  if (h) body.height = parseFloat(h);
+  if (w) body.weight = parseFloat(w);
+  if (bf) body.bodyFat = parseFloat(bf);
+  if (bu) body.bust = parseFloat(bu);
+  if (wa) body.waist = parseFloat(wa);
+  if (hi) body.hip = parseFloat(hi);
+
+  if (Object.keys(body).length > 0) {
+    bodyAll[getCurrentDate()] = body;
+    saveBodyData(bodyAll);
+  }
+
+  document.getElementById('profileModal').style.display = 'none';
+  renderProfile();
+});
+
+document.getElementById('profileModal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+
+// Enforce max 5 chars on nickname input
+document.getElementById('editNickname').addEventListener('input', function() {
+  if (this.value.length > 5) {
+    this.value = this.value.slice(0, 5);
+  }
+});
+
+// ==================== FINANCE ENGINE ====================
+const FINANCE_KEY = 'life_finance_data';
+function loadFinances() {
+  try { return JSON.parse(localStorage.getItem(FINANCE_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+function saveFinances(data) {
+  localStorage.setItem(FINANCE_KEY, JSON.stringify(data));
+}
+
+function getEntries(dateStr) {
+  const all = loadFinances();
+  return all[dateStr] || [];
+}
+function setEntries(dateStr, entries) {
+  const all = loadFinances();
+  all[dateStr] = entries;
+  saveFinances(all);
+}
+
+function getMonthFinances(dateStr) {
+  const [y, m] = dateStr.split('-');
+  const prefix = `${y}-${m}-`;
+  const all = loadFinances();
+  let totalIncome = 0, totalExpense = 0;
+  Object.keys(all).forEach(date => {
+    if (date.startsWith(prefix)) {
+      all[date].forEach(e => {
+        if (e.type === 'income') totalIncome += e.amount;
+        else totalExpense += e.amount;
+      });
+    }
+  });
+  return { income: totalIncome, expense: totalExpense, balance: totalIncome - totalExpense };
+}
+
+function renderFinance() {
+  const today = getCurrentDate();
+  const monthPicker = document.getElementById('finMonthPicker');
+  if (monthPicker && !monthPicker.value) monthPicker.value = today.substring(0, 7);
+  const selectedMonth = monthPicker ? monthPicker.value : today.substring(0, 7);
+
+  const all = loadFinances();
+  const [y, m] = selectedMonth.split('-');
+  const prefix = `${y}-${m}-`;
+
+  // Collect all entries in selected month
+  const monthEntries = [];
+  Object.keys(all).forEach(date => {
+    if (date.startsWith(prefix)) {
+      all[date].forEach((e, idx) => {
+        monthEntries.push({ date, idx, ...e });
+      });
+    }
+  });
+  // Sort by date desc, then by createdAt desc
+  monthEntries.sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    const ta = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date + 'T00:00:00').getTime();
+    const tb = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date + 'T00:00:00').getTime();
+    return tb - ta;
+  });
+
+  const monthFin = getMonthFinances(selectedMonth + '-01');
+
+  // Daily stats for today
+  const todayEntries = all[today] || [];
+  let dailyIncome = 0, dailyExpense = 0;
+  todayEntries.forEach(e => {
+    if (e.type === 'income') dailyIncome += e.amount;
+    else dailyExpense += e.amount;
+  });
+
+  // Summary
+  document.getElementById('finSummary').innerHTML = `
+    <div class="fin-sum-card">
+      <div class="fin-label">📅 今日收入</div>
+      <div class="fin-value" style="color:var(--income)">¥${dailyIncome.toFixed(2)}</div>
+    </div>
+    <div class="fin-sum-card">
+      <div class="fin-label">📅 今日支出</div>
+      <div class="fin-value" style="color:var(--expense)">¥${dailyExpense.toFixed(2)}</div>
+    </div>
+    <div class="fin-sum-card">
+      <div class="fin-label">📊 本月收入</div>
+      <div class="fin-value" style="color:var(--income)">¥${monthFin.income.toFixed(2)}</div>
+    </div>
+    <div class="fin-sum-card">
+      <div class="fin-label">📊 本月支出</div>
+      <div class="fin-value" style="color:var(--expense)">¥${monthFin.expense.toFixed(2)}</div>
+    </div>
+    <div class="fin-sum-card">
+      <div class="fin-label">💰 本月结余</div>
+      <div class="fin-value" style="color:${monthFin.balance >= 0 ? 'var(--income)' : 'var(--expense)'}">¥${monthFin.balance.toFixed(2)}</div>
+    </div>
+    <div class="fin-sum-card">
+      <div class="fin-label">📋 本月总笔数</div>
+      <div class="fin-value" style="color:var(--text)">${monthEntries.length}</div>
+    </div>
+  `;
+
+  // Entries list
+  let listHtml = '';
+  if (monthEntries.length === 0) {
+    listHtml = `<div class="empty-state">
+      <div class="empty-emoji">📝</div>
+      <div>这个月还没有记账哦，开始记录吧～</div>
+    </div>`;
+  } else {
+    monthEntries.forEach(e => {
+      const sign = e.type === 'income' ? '+' : '-';
+      const dateLabel = e.date.slice(5);
+      listHtml += `<div class="fin-entry ${e.type}">
+        <div class="entry-cat">${e.category.split(' ')[0]}</div>
+        <div class="entry-info">
+          <div class="entry-name">${e.category} <span class="entry-date">${dateLabel}</span></div>
+          ${e.note ? `<div class="entry-note">${e.note}</div>` : ''}
+        </div>
+        <div class="entry-amount">${sign}¥${e.amount.toFixed(2)}</div>
+        <div class="entry-actions">
+          <button class="btn-edit" data-date="${e.date}" data-idx="${e.idx}" title="编辑">✏️</button>
+          <button class="btn-del" data-date="${e.date}" data-idx="${e.idx}" title="删除">🗑️</button>
+        </div>
+      </div>`;
+    });
+  }
+  document.getElementById('finEntriesList').innerHTML = listHtml;
+
+  // Bind edit/delete (event delegation) once
+  const finContainer = document.getElementById('finEntriesList');
+  if (!finContainer._bound) {
+    finContainer._bound = true;
+    finContainer.addEventListener('click', function finClickHandler(e) {
+      const btn = e.target.closest('.btn-edit, .btn-del');
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.idx);
+      const dateStr = btn.dataset.date;
+      if (isNaN(idx) || !dateStr) return;
+      if (btn.classList.contains('btn-del')) {
+        if (confirm('确定删除这笔记录吗？')) {
+          const entries = getEntries(dateStr);
+          entries.splice(idx, 1);
+          setEntries(dateStr, entries);
+          renderFinance();
+        }
+      } else {
+        openEditModal(dateStr, idx);
+      }
+    });
+  }
+}
+
+// Add entry
+document.getElementById('btnAddFin').addEventListener('click', function() {
+  const type = document.getElementById('finType').value;
+  const category = document.getElementById('finCategory').value;
+  const amount = parseFloat(document.getElementById('finAmount').value);
+  const note = document.getElementById('finNote').value.trim();
+
+  if (!amount || amount <= 0) {
+    alert('请输入有效金额');
+    return;
+  }
+
+  const entries = getEntries(getCurrentDate());
+  entries.push({ type, category, amount, note, createdAt: new Date().toISOString() });
+  setEntries(getCurrentDate(), entries);
+  renderFinance();
+
+  // Clear form
+  document.getElementById('finAmount').value = '';
+  document.getElementById('finNote').value = '';
+});
+
+// Edit modal
+function openEditModal(dateStr, idx) {
+  editingEntryDate = dateStr;
+  editingEntryId = idx;
+  const entries = getEntries(dateStr);
+  const entry = entries[idx];
+
+  document.getElementById('editType').innerHTML = `
+    <option value="expense" ${entry.type==='expense'?'selected':''}>🔴 支出</option>
+    <option value="income" ${entry.type==='income'?'selected':''}>🟢 收入</option>
+  `;
+  const cats = ['🍜 餐饮','🚇 交通','🛒 购物','🏠 居住','🎮 娱乐','💊 医疗','📚 教育','💼 工资','📈 理财','🎁 红包','📋 其他'];
+  document.getElementById('editCategory').innerHTML = cats.map(c => `<option value="${c}" ${entry.category===c?'selected':''}>${c}</option>`).join('');
+  document.getElementById('editAmount').value = entry.amount;
+  document.getElementById('editNote').value = entry.note || '';
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+document.getElementById('btnCancelEdit').addEventListener('click', function() {
+  document.getElementById('editModal').style.display = 'none';
+  editingEntryId = null;
+  editingEntryDate = null;
+});
+
+document.getElementById('btnSaveEdit').addEventListener('click', function() {
+  const entries = getEntries(editingEntryDate);
+  const oldEntry = entries[editingEntryId] || {};
+  entries[editingEntryId] = {
+    type: document.getElementById('editType').value,
+    category: document.getElementById('editCategory').value,
+    amount: parseFloat(document.getElementById('editAmount').value),
+    note: document.getElementById('editNote').value.trim(),
+    createdAt: oldEntry.createdAt || new Date().toISOString(),
+  };
+  setEntries(editingEntryDate, entries);
+  document.getElementById('editModal').style.display = 'none';
+  renderFinance();
+});
+
+// Close modal on overlay click
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    this.style.display = 'none';
+  }
+});
+
+// ==================== HOME ====================
+const MOOD_KEY = 'life_mood_data';
+const HABIT_KEY = 'life_habit_data';
+const moodMap = {
+  happy: '😊', calm: '😌', tired: '😴', excited: '🤩', sad: '😢'
+};
+
+function loadMoods() {
+  try { return JSON.parse(localStorage.getItem(MOOD_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+function saveMoods(data) { localStorage.setItem(MOOD_KEY, JSON.stringify(data)); }
+function loadHabits() {
+  try { return JSON.parse(localStorage.getItem(HABIT_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+function saveHabits(data) { localStorage.setItem(HABIT_KEY, JSON.stringify(data)); }
+
+function renderHome() {
+  const dateStr = getCurrentDate();
+
+  // Overview
+  const dietData = generateDiet(dateStr);
+  const dietCals = [dietData.breakfast, dietData.lunch, dietData.dinner].reduce((sum, m) => sum + (parseInt((m.cal || '').match(/\d+/)?.[0]) || 0), 0);
+
+  const workoutData = getWorkout(dateStr);
+  const workoutDone = workoutData.items.filter(it => it.checked).length;
+  const workoutTotal = workoutData.items.length;
+
+  const skinData = loadSkincare(dateStr);
+  const skinDone = (skinData.morning || []).filter(it => it.checked).length + (skinData.evening || []).filter(it => it.checked).length;
+  const skinTotal = (skinData.morning || []).length + (skinData.evening || []).length;
+
+  const entries = getEntries(dateStr);
+  const todayExpense = entries.filter(e => e.type === 'expense').reduce((sum, e) => sum + e.amount, 0);
+
+  document.getElementById('ovDiet').textContent = `${dietCals} 千卡`;
+  document.getElementById('ovWorkout').textContent = workoutTotal > 0 ? `${workoutDone} / ${workoutTotal} 项` : '休息日';
+  document.getElementById('ovSkincare').textContent = `${skinDone} / ${skinTotal} 步`;
+  document.getElementById('ovFinance').textContent = `¥ ${todayExpense.toFixed(2)}`;
+
+  // Mood
+  const moods = loadMoods();
+  const todayMood = moods[dateStr];
+  const isSaved = !!todayMood;
+  const pendingMood = window._pendingMood || (todayMood ? todayMood.mood : null);
+
+  document.querySelectorAll('#moodPicker .mood-btn').forEach(btn => {
+    btn.classList.toggle('selected', pendingMood === btn.dataset.mood);
+  });
+  const noteEl = document.getElementById('moodNote');
+  noteEl.value = todayMood ? (todayMood.note || '') : '';
+
+  const saveBtn = document.getElementById('btnSaveMood');
+  if (isSaved) {
+    saveBtn.disabled = true;
+    saveBtn.classList.add('saved');
+    saveBtn.textContent = '✓ 已保存今日心情';
+  } else if (!pendingMood) {
+    saveBtn.disabled = true;
+    saveBtn.classList.remove('saved');
+    saveBtn.textContent = '💾 保存心情';
+  } else {
+    saveBtn.disabled = false;
+    saveBtn.classList.remove('saved');
+    saveBtn.textContent = '💾 保存心情';
+  }
+
+  const sortedMoodDates = Object.keys(moods).sort().reverse().slice(0, 5);
+  document.getElementById('moodHistory').innerHTML = sortedMoodDates.map(d => `
+    <div class="mood-record">
+      <span class="mood-emoji">${moodMap[moods[d].mood] || '😊'}</span>
+      <span class="mood-text">${escapeHtml(moods[d].note || '记录了一个心情')}</span>
+      <span class="mood-date">${d.slice(5)}</span>
+    </div>
+  `).join('');
+
+  // Habits
+  const habits = loadHabits();
+  const todayHabits = habits[dateStr] || {};
+  document.querySelectorAll('#habitList input[data-habit]').forEach(cb => {
+    cb.checked = !!todayHabits[cb.dataset.habit];
+  });
+}
+
+// Home mood click
+function setupHomeEvents() {
+  document.querySelectorAll('#moodPicker .mood-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      window._pendingMood = this.dataset.mood;
+      renderHome();
+    });
+  });
+
+  document.getElementById('btnSaveMood').addEventListener('click', function() {
+    if (this.disabled) return;
+    const dateStr = getCurrentDate();
+    const moods = loadMoods();
+    if (moods[dateStr]) return; // already saved today
+    const note = document.getElementById('moodNote').value.trim();
+    const mood = window._pendingMood || 'happy';
+    moods[dateStr] = { mood, note };
+    saveMoods(moods);
+    window._pendingMood = null;
+    renderHome();
+  });
+
+  document.querySelectorAll('#habitList input[data-habit]').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const dateStr = getCurrentDate();
+      const habits = loadHabits();
+      if (!habits[dateStr]) habits[dateStr] = {};
+      habits[dateStr][this.dataset.habit] = this.checked;
+      saveHabits(habits);
+      renderHome();
+    });
+  });
+
+  document.getElementById('btnStartDay').addEventListener('click', function() {
+    const dateStr = getCurrentDate();
+    currentDate.diet = dateStr;
+    currentDate.skincare = dateStr;
+    currentDate.workout = dateStr;
+    currentDate.finance = dateStr;
+    currentDate.profile = dateStr;
+    alert('🌸 新的一天开始啦！去记录今天的饮食、运动和心情吧～');
+    switchPanel('diet');
+  });
+
+  document.querySelectorAll('.quick-btn[data-panel]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      switchPanel(this.dataset.panel);
+    });
+  });
+}
+
+function switchPanel(panel) {
+  currentPanel = panel;
+  document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+  const targetLink = document.querySelector(`.sidebar-nav a[data-panel="${panel}"]`);
+  if (targetLink) targetLink.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + panel).classList.add('active');
+  datePicker.value = getCurrentDate();
+  // Hide global date bar on pages that don't need day-level date selection
+  const noDateBarPanels = ['home', 'skincare', 'profile', 'finance', 'diet'];
+  document.querySelector('.date-bar').style.display = noDateBarPanels.includes(panel) ? 'none' : '';
+  renderCurrentPanel();
+}
+
+// ==================== RENDER CURRENT PANEL ====================
+function renderCurrentPanel() {
+  switch(currentPanel) {
+    case 'home': renderHome(); break;
+    case 'diet': renderDiet(); break;
+    case 'skincare': renderSkincare(); break;
+    case 'workout': renderWorkout(); break;
+    case 'finance': renderFinance(); break;
+    case 'profile': renderProfile(); break;
+  }
+}
+
+// ==================== INIT ====================
+updateSidebarProfile();
+setupHomeEvents();
+const finMonthPicker = document.getElementById('finMonthPicker');
+if (finMonthPicker) {
+  finMonthPicker.value = getCurrentDate().substring(0, 7);
+  finMonthPicker.addEventListener('change', renderFinance);
+}
+const bodyMonthPicker = document.getElementById('bodyMonthPicker');
+if (bodyMonthPicker) {
+  bodyMonthPicker.addEventListener('change', renderProfile);
+}
+switchPanel('home');
+</script>
+
+<!-- Cropper.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+
+<!-- Crop modal -->
+<div class="crop-overlay" id="cropOverlay">
+  <div class="crop-container">
+    <div class="crop-title">✂️ 裁剪头像</div>
+    <div class="crop-area" id="cropArea">
+      <img id="cropImage" src="" alt="">
+    </div>
+    <div class="crop-actions">
+      <button class="btn-crop-cancel" id="btnCropCancel">取消</button>
+      <button class="btn-crop-confirm" id="btnCropConfirm">✅ 确认裁剪</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Crop modal buttons (must bind after DOM exists)
+document.getElementById('btnCropConfirm').addEventListener('click', function() {
+  if (!cropInstance) return;
+  const canvas = cropInstance.getCroppedCanvas({ width: 300, height: 300 });
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+  const profile = loadProfile();
+  profile.avatar = dataUrl;
+  saveProfile(profile);
+  renderProfile();
+
+  cropInstance.destroy();
+  cropInstance = null;
+  document.getElementById('cropOverlay').classList.remove('show');
+});
+
+document.getElementById('btnCropCancel').addEventListener('click', closeCropModal);
+
+document.getElementById('cropOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeCropModal();
+});
+</script>
+</body>
+</html>
