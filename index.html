@@ -2,9 +2,19 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>🎀 每日生活管理 · Hello Kitty</title>
   <meta http-equiv="Cache-Control" content="no-store">
+  <!-- PWA Meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="每日生活管理">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#FFB6C1">
+  <meta name="apple-mobile-web-app-status-bar-style" content="#FFB6C1">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <!-- PWA End -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap');
@@ -3411,6 +3421,13 @@ document.getElementById('btnCropCancel').addEventListener('click', closeCropModa
 document.getElementById('cropOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeCropModal();
 });
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function() {});
+  });
+}
 </script>
 </body>
 </html>
