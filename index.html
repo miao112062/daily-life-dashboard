@@ -1362,6 +1362,9 @@
     box-shadow: 0 0 0 3px rgba(240,160,192,0.1);
   }
   .modal .btn-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+  .modal .field-warning {
+    display: block; font-size: 12px; color: #e04860; margin-top: 4px; line-height: 1.4;
+  }
   .modal .btn-save {
     background: linear-gradient(135deg, #f0a0c0, #e07098); color: #fff; border: none;
     padding: 10px 24px; border-radius: 25px; cursor: pointer; font-weight: 600;
@@ -1902,7 +1905,8 @@
     <h3>✏️ 编辑个人资料</h3>
     <div class="form-group">
       <label>昵称</label>
-      <input type="text" id="editNickname" placeholder="你的昵称" maxlength="5">
+      <input type="text" id="editNickname" placeholder="你的昵称">
+      <span class="field-warning" id="nicknameWarning" style="display:none;">⚠️ 昵称仅支持英文与汉字</span>
     </div>
     <div class="form-group">
       <label>个性签名</label>
@@ -2913,9 +2917,14 @@ function closeCropModal() {
 // Nickname inline edit
 document.getElementById('displayNickname').addEventListener('click', function() {
   const profile = loadProfile();
-  const newName = prompt('请输入昵称：', profile.nickname || '');
+  const newName = prompt('请输入昵称（仅支持英文与汉字）：', profile.nickname || '');
   if (newName !== null) {
-    profile.nickname = newName.trim();
+    const trimmed = newName.trim();
+    if (trimmed && !isValidNickname(trimmed)) {
+      alert('昵称仅支持英文与汉字，请重新输入');
+      return;
+    }
+    profile.nickname = trimmed;
     saveProfile(profile);
     renderProfile();
   }
@@ -2929,6 +2938,8 @@ document.getElementById('btnEditProfile').addEventListener('click', function() {
   const editBody = { ...getLatestBodyData(), ...todayBody };
 
   document.getElementById('editNickname').value = profile.nickname || '';
+  document.getElementById('nicknameWarning').style.display = 'none';
+  document.getElementById('editNickname').style.borderColor = '';
   document.getElementById('editSign').value = profile.sign || '';
   document.getElementById('editHeight').value = editBody.height || '';
   document.getElementById('editWeight').value = editBody.weight || '';
@@ -2945,7 +2956,17 @@ document.getElementById('btnCancelProfile').addEventListener('click', function()
 
 document.getElementById('btnSaveProfile').addEventListener('click', function() {
   const profile = loadProfile();
-  profile.nickname = document.getElementById('editNickname').value.trim();
+  const nickname = document.getElementById('editNickname').value.trim();
+  
+  // Validate nickname
+  if (nickname && !isValidNickname(nickname)) {
+    document.getElementById('nicknameWarning').style.display = 'block';
+    document.getElementById('editNickname').style.borderColor = '#e04860';
+    document.getElementById('editNickname').focus();
+    return;
+  }
+  
+  profile.nickname = nickname;
   profile.sign = document.getElementById('editSign').value.trim();
   saveProfile(profile);
 
@@ -2978,10 +2999,17 @@ document.getElementById('profileModal').addEventListener('click', function(e) {
   if (e.target === this) this.style.display = 'none';
 });
 
-// Enforce max 5 chars on nickname input
+// Validate nickname: only English + Chinese characters
+function isValidNickname(val) { return /^[a-zA-Z\u4e00-\u9fff]*$/.test(val); }
+
 document.getElementById('editNickname').addEventListener('input', function() {
-  if (this.value.length > 5) {
-    this.value = this.value.slice(0, 5);
+  const warning = document.getElementById('nicknameWarning');
+  if (!isValidNickname(this.value)) {
+    warning.style.display = 'block';
+    this.style.borderColor = '#e04860';
+  } else {
+    warning.style.display = 'none';
+    this.style.borderColor = '';
   }
 });
 
