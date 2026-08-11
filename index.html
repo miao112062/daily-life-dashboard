@@ -566,6 +566,41 @@
     color: var(--pink-deep);
     font-weight: 700;
   }
+  /* Sync card */
+  .sync-card { margin-bottom: 18px; }
+  .sync-card .sync-status-bar {
+    display: flex; align-items: center; gap: 8px; font-size: 13px;
+    padding: 10px 14px; border-radius: 12px; margin-bottom: 12px;
+    background: rgba(255,255,255,0.6);
+  }
+  .sync-card .sync-status-bar .dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .sync-card .sync-status-bar .dot.ok { background: #4CAF50; }
+  .sync-card .sync-status-bar .dot.off { background: #ccc; }
+  .sync-card .sync-status-bar .dot.err { background: #e04860; }
+  .sync-card .token-row {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .sync-card .token-row input {
+    flex: 1; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid #e8d0d8; font-size: 13px; font-family: inherit;
+    background: rgba(255,255,255,0.7);
+    transition: border-color 0.3s;
+  }
+  .sync-card .token-row input:focus { border-color: var(--accent); outline: none; }
+  .sync-card .sync-actions {
+    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+  }
+  .sync-card .btn-sync {
+    padding: 8px 16px; border-radius: 10px; border: none; font-size: 13px;
+    cursor: pointer; font-weight: 600; transition: all 0.3s;
+  }
+  .sync-card .btn-sync-up { background: linear-gradient(135deg, #f0a0c0, #e07098); color: #fff; }
+  .sync-card .btn-sync-down { background: linear-gradient(135deg, #a0c4f0, #7098e0); color: #fff; }
+  .sync-card .btn-sync-export { background: #fff; color: #666; border: 1px solid #ddd; }
+  .sync-card .btn-sync:hover { transform: translateY(-1px); opacity: 0.9; }
+  .sync-card .sync-hint { font-size: 11px; color: #999; margin-top: 8px; line-height: 1.5; }
   .card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -1515,6 +1550,10 @@
 
     /* Form buttons & global */
     .btn-action { font-size: 13px; padding: 8px 16px; }
+
+    /* Sync card */
+    .sync-card .token-row { flex-direction: column; }
+    .sync-card .btn-sync { font-size: 12px; padding: 7px 12px; }
   }
 
   @media (max-width: 480px) {
@@ -1841,6 +1880,28 @@
         <div class="profile-nickname" id="displayNickname" title="点击编辑昵称">未设置昵称</div>
         <div class="profile-sign" id="displaySign">点击编辑个人信息 ✨</div>
         <button class="btn-edit-profile" id="btnEditProfile">✏️ 编辑资料</button>
+      </div>
+    </div>
+
+    <div class="card sync-card">
+      <h3>☁️ 数据云同步</h3>
+      <div class="sync-status-bar" id="syncStatusBar">
+        <span class="dot off" id="syncDot"></span>
+        <span id="syncStatusText">未配置同步</span>
+      </div>
+      <div class="token-row">
+        <input type="password" id="githubToken" placeholder="输入 GitHub Token（仅需 gist 权限）" autocomplete="off">
+        <button class="btn-sync btn-sync-up" id="btnSaveToken" style="flex-shrink:0;">💾 保存</button>
+      </div>
+      <div class="sync-actions">
+        <button class="btn-sync btn-sync-up" id="btnSyncUpload">⬆ 同步到云端</button>
+        <button class="btn-sync btn-sync-down" id="btnSyncDownload">⬇ 从云端恢复</button>
+        <button class="btn-sync btn-sync-export" id="btnExportData">📥 导出备份</button>
+        <button class="btn-sync btn-sync-export" id="btnImportData">📤 导入备份</button>
+      </div>
+      <input type="file" id="importFileInput" accept=".json" style="display:none;">
+      <div class="sync-hint" id="syncHint">
+        🔑 <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--pink-deep);">点此创建 Token</a> → 选 <b>Generate new token (classic)</b> → 仅勾选 <b>gist</b> → 复制粘贴到上方
       </div>
     </div>
 
@@ -3442,6 +3503,283 @@ if (bodyMonthPicker) {
   bodyMonthPicker.addEventListener('change', renderProfile);
 }
 switchPanel('home');
+
+// ==================== CLOUD SYNC (GitHub Gist) ====================
+const SYNC_KEY = 'life_sync_config';
+const GIST_FILENAME = 'workbench-data.json';
+var syncGistId = null;
+
+function loadSyncConfig() {
+  try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveSyncConfig(cfg) { localStorage.setItem(SYNC_KEY, JSON.stringify(cfg)); }
+
+// Collect all app data into one object
+function collectAllData() {
+  var data = {};
+  var keys = [
+    'skincare_data', 'life_workout_data', 'life_profile_data',
+    'life_body_data', 'life_finance_data', 'life_mood_data', 'life_habit_data'
+  ];
+  keys.forEach(function(k) {
+    var val = localStorage.getItem(k);
+    if (val) data[k] = val;
+  });
+  data._updatedAt = new Date().toISOString();
+  return data;
+}
+
+// Restore data from object
+function restoreAllData(data) {
+  if (!data) return;
+  var keys = [
+    'skincare_data', 'life_workout_data', 'life_profile_data',
+    'life_body_data', 'life_finance_data', 'life_mood_data', 'life_habit_data'
+  ];
+  var restored = 0;
+  keys.forEach(function(k) {
+    if (data[k] !== undefined) {
+      localStorage.setItem(k, data[k]);
+      restored++;
+    }
+  });
+  return restored;
+}
+
+// GitHub API helpers
+function ghHeaders() {
+  var cfg = loadSyncConfig();
+  if (!cfg.token) return null;
+  return {
+    'Authorization': 'token ' + cfg.token,
+    'Accept': 'application/vnd.github+json'
+  };
+}
+
+function updateSyncUI() {
+  var cfg = loadSyncConfig();
+  var dot = document.getElementById('syncDot');
+  var statusText = document.getElementById('syncStatusText');
+  var tokenInput = document.getElementById('githubToken');
+
+  if (!cfg.token) {
+    dot.className = 'dot off';
+    statusText.textContent = '未配置同步';
+    tokenInput.value = '';
+  } else if (cfg.lastSync) {
+    dot.className = 'dot ok';
+    statusText.textContent = '已同步 · ' + cfg.lastSync;
+    tokenInput.value = cfg.token;
+  } else {
+    dot.className = 'dot off';
+    statusText.textContent = 'Token 已保存，待首次同步';
+    tokenInput.value = cfg.token;
+  }
+}
+
+// Save token
+document.getElementById('btnSaveToken').addEventListener('click', function() {
+  var token = document.getElementById('githubToken').value.trim();
+  if (!token) { alert('请输入 GitHub Token'); return; }
+  var cfg = loadSyncConfig();
+  cfg.token = token;
+  saveSyncConfig(cfg);
+  updateSyncUI();
+  alert('Token 已保存 ✅');
+});
+
+// Get or create Gist
+function getOrCreateGist(callback) {
+  var headers = ghHeaders();
+  if (!headers) { callback('No token configured', null); return; }
+  var cfg = loadSyncConfig();
+
+  // If we have a gist ID, try to get it
+  if (cfg.gistId) {
+    fetch('https://api.github.com/gists/' + cfg.gistId, { headers: headers })
+      .then(function(r) {
+        if (r.ok) return r.json();
+        // Gist deleted or inaccessible, create new
+        cfg.gistId = null; saveSyncConfig(cfg);
+        return createGist(headers, callback);
+      })
+      .then(function(gist) {
+        if (!gist || !gist.id) return;
+        // Check if our filename exists
+        if (!gist.files || !gist.files[GIST_FILENAME]) {
+          return createGist(headers, callback);
+        }
+        cfg.gistId = gist.id; saveSyncConfig(cfg);
+        callback(null, gist);
+      })
+      .catch(function(e) { callback(e.message, null); });
+  } else {
+    createGist(headers, callback);
+  }
+}
+
+function createGist(headers, callback) {
+  var data = collectAllData();
+  var body = {
+    description: '个人工作台 数据备份',
+    public: false,
+    files: {}
+  };
+  body.files[GIST_FILENAME] = { content: JSON.stringify(data, null, 2) };
+
+  fetch('https://api.github.com/gists', {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify(body)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(gist) {
+      if (gist.message && gist.documentation_url) {
+        callback(gist.message, null); return;
+      }
+      var cfg = loadSyncConfig();
+      cfg.gistId = gist.id;
+      cfg.lastSync = new Date().toLocaleString('zh-CN');
+      saveSyncConfig(cfg);
+      callback(null, gist);
+    })
+    .catch(function(e) { callback(e.message, null); });
+}
+
+// Upload: sync local → cloud
+document.getElementById('btnSyncUpload').addEventListener('click', function() {
+  var headers = ghHeaders();
+  if (!headers) { alert('请先填写并保存 GitHub Token'); return; }
+
+  var btn = document.getElementById('btnSyncUpload');
+  btn.textContent = '⏳ 同步中...'; btn.disabled = true;
+
+  getOrCreateGist(function(err, gist) {
+    if (err) {
+      alert('同步失败: ' + err);
+      btn.textContent = '⬆ 同步到云端'; btn.disabled = false;
+      return;
+    }
+
+    var data = collectAllData();
+    var body = { files: {} };
+    body.files[GIST_FILENAME] = { content: JSON.stringify(data, null, 2) };
+
+    fetch('https://api.github.com/gists/' + gist.id, {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(body)
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(updated) {
+        if (updated.message && updated.documentation_url) {
+          alert('同步失败: ' + updated.message);
+          btn.textContent = '⬆ 同步到云端'; btn.disabled = false;
+          return;
+        }
+        var cfg = loadSyncConfig();
+        cfg.lastSync = new Date().toLocaleString('zh-CN');
+        saveSyncConfig(cfg);
+        updateSyncUI();
+        alert('同步成功 ✅');
+        btn.textContent = '⬆ 同步到云端'; btn.disabled = false;
+      })
+      .catch(function(e) {
+        alert('同步失败: ' + e.message);
+        btn.textContent = '⬆ 同步到云端'; btn.disabled = false;
+      });
+  });
+});
+
+// Download: restore cloud → local
+document.getElementById('btnSyncDownload').addEventListener('click', function() {
+  var headers = ghHeaders();
+  if (!headers) { alert('请先填写并保存 GitHub Token'); return; }
+
+  var cfg = loadSyncConfig();
+  if (!cfg.gistId) {
+    alert('尚未同步过，请先执行一次「同步到云端」');
+    return;
+  }
+
+  if (!confirm('从云端恢复将覆盖当前本地数据，确定继续？')) return;
+
+  var btn = document.getElementById('btnSyncDownload');
+  btn.textContent = '⏳ 下载中...'; btn.disabled = true;
+
+  fetch('https://api.github.com/gists/' + cfg.gistId, { headers: headers })
+    .then(function(r) { return r.json(); })
+    .then(function(gist) {
+      if (gist.message && gist.documentation_url) {
+        alert('下载失败: ' + gist.message);
+        btn.textContent = '⬇ 从云端恢复'; btn.disabled = false;
+        return;
+      }
+      if (!gist.files || !gist.files[GIST_FILENAME]) {
+        alert('云端未找到备份数据');
+        btn.textContent = '⬇ 从云端恢复'; btn.disabled = false;
+        return;
+      }
+      try {
+        var data = JSON.parse(gist.files[GIST_FILENAME].content);
+        var count = restoreAllData(data);
+        cfg.lastSync = new Date().toLocaleString('zh-CN');
+        saveSyncConfig(cfg);
+        updateSyncUI();
+        alert('恢复成功 ✅，已恢复 ' + count + ' 项数据');
+        // Reload to apply
+        location.reload();
+      } catch(e) {
+        alert('数据解析失败: ' + e.message);
+      }
+      btn.textContent = '⬇ 从云端恢复'; btn.disabled = false;
+    })
+    .catch(function(e) {
+      alert('下载失败: ' + e.message);
+      btn.textContent = '⬇ 从云端恢复'; btn.disabled = false;
+    });
+});
+
+// Export: download all data as JSON file
+document.getElementById('btnExportData').addEventListener('click', function() {
+  var data = collectAllData();
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'workbench-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  alert('备份文件已下载 ✅');
+});
+
+// Import: restore from JSON file
+document.getElementById('btnImportData').addEventListener('click', function() {
+  document.getElementById('importFileInput').click();
+});
+document.getElementById('importFileInput').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  if (!confirm('导入备份将覆盖当前本地数据，确定继续？')) { this.value = ''; return; }
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = JSON.parse(ev.target.result);
+      var count = restoreAllData(data);
+      alert('导入成功 ✅，已恢复 ' + count + ' 项数据');
+      location.reload();
+    } catch(err) {
+      alert('文件格式错误，无法导入');
+    }
+  };
+  reader.readAsText(file);
+  this.value = '';
+});
+
+// Init sync UI
+updateSyncUI();
 
 // Hide startup loader after first render
 setTimeout(function() {
