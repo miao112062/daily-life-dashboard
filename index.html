@@ -2372,34 +2372,30 @@ function renderSkincare() {
     btn.addEventListener('click', () => showSkinAddForm(btn.dataset.type));
   });
 
-  // Edit / Delete (event delegation for reliability)
+  // Edit / Delete (event delegation — bound ONCE to prevent duplicate handlers)
   const skinContainer = document.getElementById('skincareContent');
-  skinContainer.querySelectorAll('.btn-edit').forEach(btn => {
-    const old = btn.cloneNode(true);
-    btn.parentNode.replaceChild(old, btn);
-  });
-  skinContainer.querySelectorAll('.btn-del').forEach(btn => {
-    const old = btn.cloneNode(true);
-    btn.parentNode.replaceChild(old, btn);
-  });
-  skinContainer.addEventListener('click', function skinClickHandler(e) {
-    const delBtn = e.target.closest('.btn-del');
-    const editBtn = e.target.closest('.btn-edit');
-    if (!delBtn && !editBtn) return;
-    const row = (delBtn || editBtn).closest('.checklist-item');
-    if (!row) return;
-    const type = row.dataset.type;
-    const idx = parseInt(row.dataset.idx);
-    if (delBtn) {
-      if (!confirm('确定删除这条护肤步骤吗？')) return;
-      const data = loadSkincare(dateStr);
-      data[type].splice(idx, 1);
-      saveSkincare(dateStr, data);
-      renderSkincare();
-    } else {
-      enterSkinEditMode(row);
-    }
-  });
+  if (!skinContainer._bound) {
+    skinContainer._bound = true;
+    skinContainer.addEventListener('click', function skinClickHandler(e) {
+      const delBtn = e.target.closest('.btn-del');
+      const editBtn = e.target.closest('.btn-edit');
+      if (!delBtn && !editBtn) return;
+      const row = (delBtn || editBtn).closest('.checklist-item');
+      if (!row) return;
+      const type = row.dataset.type;
+      const idx = parseInt(row.dataset.idx);
+      if (delBtn) {
+        if (!confirm('确定删除这条护肤步骤吗？')) return;
+        const dateStr = currentDate.skincare;
+        const data = loadSkincare(dateStr);
+        data[type].splice(idx, 1);
+        saveSkincare(dateStr, data);
+        renderSkincare();
+      } else {
+        enterSkinEditMode(row);
+      }
+    });
+  }
 
   // Add form buttons
   document.querySelectorAll('#skincareContent .skincare-form .btn-confirm').forEach(btn => {
@@ -2708,18 +2704,22 @@ function renderWorkout() {
     });
   });
 
-  // Bind delete events (event delegation)
+  // Bind delete events (event delegation — bound ONCE to prevent duplicate handlers)
   const workoutContainer = document.getElementById('workoutContent');
-  workoutContainer.addEventListener('click', function workoutDelHandler(e) {
-    const delBtn = e.target.closest('.btn-del-ex');
-    if (!delBtn) return;
-    const idx = parseInt(delBtn.dataset.idx);
-    if (isNaN(idx)) return;
-    const data = getWorkout(dateStr);
-    data.items.splice(idx, 1);
-    setWorkout(dateStr, data);
-    renderWorkout();
-  });
+  if (!workoutContainer._bound) {
+    workoutContainer._bound = true;
+    workoutContainer.addEventListener('click', function workoutDelHandler(e) {
+      const delBtn = e.target.closest('.btn-del-ex');
+      if (!delBtn) return;
+      const idx = parseInt(delBtn.dataset.idx);
+      if (isNaN(idx)) return;
+      const dateStr = currentDate.workout;
+      const data = getWorkout(dateStr);
+      data.items.splice(idx, 1);
+      setWorkout(dateStr, data);
+      renderWorkout();
+    });
+  }
 
   // Bind "清空当天" button
   const btnClear = document.getElementById('btnClearWorkout');
