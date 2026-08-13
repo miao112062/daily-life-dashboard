@@ -492,6 +492,7 @@
     transition: all 0.25s;
     font-size: 14px;
     font-weight: 500;
+    user-select: none;
   }
   .habit-item:hover { background: #fef0f6; }
   .habit-item input { display: none; }
@@ -515,7 +516,46 @@
     font-size: 12px;
     font-weight: 700;
   }
+  .habit-item .habit-text { flex: 1; min-width: 0; }
   .habit-item input:checked ~ .habit-text { text-decoration: line-through; opacity: 0.6; }
+  .habit-item .habit-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+  .habit-item:hover .habit-actions { opacity: 1; }
+  .habit-actions button {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(224,112,152,0.15);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+  .habit-actions button:hover { transform: scale(1.1); background: #ffe4ef; }
+  .habit-actions button:active { transform: scale(0.95); }
+  .habit-card h3 { justify-content: space-between; }
+  .btn-add-habit {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: none;
+    background: linear-gradient(135deg, #f0a0c0, #e07098);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(224,112,152,0.25);
+    transition: all 0.2s;
+  }
+  .btn-add-habit:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(224,112,152,0.35); }
+  .btn-add-habit:active { transform: scale(0.96); }
 
   .quick-actions {
     display: grid;
@@ -1818,14 +1858,9 @@
 
       <!-- Habit Tracker -->
       <div class="home-card habit-card">
-        <h3>✨ 习惯打卡</h3>
+        <h3><span>✨ 习惯打卡</span><button class="btn-add-habit" id="btnAddHabit" title="新增习惯">+ 新增</button></h3>
         <div class="habit-list" id="habitList">
-          <label class="habit-item"><input type="checkbox" data-habit="water"><span class="habit-check"></span><span class="habit-text">喝够 8 杯水 💧</span></label>
-          <label class="habit-item"><input type="checkbox" data-habit="read"><span class="habit-check"></span><span class="habit-text">阅读 30 分钟 📖</span></label>
-          <label class="habit-item"><input type="checkbox" data-habit="sleep"><span class="habit-check"></span><span class="habit-text">11点前睡觉 🌙</span></label>
-          <label class="habit-item"><input type="checkbox" data-habit="fruit"><span class="habit-check"></span><span class="habit-text">吃水果/蔬菜 🥗</span></label>
-          <label class="habit-item"><input type="checkbox" data-habit="tidy"><span class="habit-check"></span><span class="habit-text">整理房间 10 分钟 🧹</span></label>
-          <label class="habit-item"><input type="checkbox" data-habit="gratitude"><span class="habit-check"></span><span class="habit-text">记录 3 件感恩小事 🙏</span></label>
+          <!-- 习惯项由 JS 渲染 -->
         </div>
       </div>
 
@@ -3332,6 +3367,7 @@ document.getElementById('editModal').addEventListener('click', function(e) {
 // ==================== HOME ====================
 const MOOD_KEY = 'life_mood_data';
 const HABIT_KEY = 'life_habit_data';
+const HABIT_DEFS_KEY = 'life_habit_defs';
 const moodMap = {
   happy: '😊', calm: '😌', tired: '😴', excited: '🤩', sad: '😢'
 };
@@ -3346,6 +3382,53 @@ function loadHabits() {
   catch(e) { return {}; }
 }
 function saveHabits(data) { localStorage.setItem(HABIT_KEY, JSON.stringify(data)); }
+
+const DEFAULT_HABITS = [
+  { id: 'water', text: '喝够 8 杯水 💧' },
+  { id: 'read', text: '阅读 30 分钟 📖' },
+  { id: 'sleep', text: '11点前睡觉 🌙' },
+  { id: 'fruit', text: '吃水果/蔬菜 🥗' },
+  { id: 'tidy', text: '整理房间 10 分钟 🧹' },
+  { id: 'gratitude', text: '记录 3 件感恩小事 🙏' }
+];
+function loadHabitDefs() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(HABIT_DEFS_KEY));
+    if (Array.isArray(raw) && raw.length) return raw;
+  } catch(e) {}
+  return null;
+}
+function saveHabitDefs(defs) { localStorage.setItem(HABIT_DEFS_KEY, JSON.stringify(defs)); }
+function getHabitDefs() {
+  let defs = loadHabitDefs();
+  if (!defs) {
+    defs = DEFAULT_HABITS.slice();
+    saveHabitDefs(defs);
+  }
+  return defs;
+}
+function renderHabits() {
+  const defs = getHabitDefs();
+  const dateStr = getCurrentDate();
+  const habits = loadHabits();
+  const todayHabits = habits[dateStr] || {};
+  const list = document.getElementById('habitList');
+  if (defs.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px 0;"><div class="empty-emoji">✨</div><div>还没有习惯，点击右上角“新增”添加吧～</div></div>';
+    return;
+  }
+  list.innerHTML = defs.map(def => `
+    <label class="habit-item" data-hid="${def.id}">
+      <input type="checkbox" data-habit="${def.id}" ${todayHabits[def.id] ? 'checked' : ''}>
+      <span class="habit-check"></span>
+      <span class="habit-text">${escapeHtml(def.text)}</span>
+      <span class="habit-actions">
+        <button type="button" class="btn-edit-habit" data-hid="${def.id}" title="编辑">✏️</button>
+        <button type="button" class="btn-del-habit" data-hid="${def.id}" title="删除">🗑️</button>
+      </span>
+    </label>
+  `).join('');
+}
 
 function renderHome() {
   const dateStr = getCurrentDate();
@@ -3407,11 +3490,7 @@ function renderHome() {
   `).join('');
 
   // Habits
-  const habits = loadHabits();
-  const todayHabits = habits[dateStr] || {};
-  document.querySelectorAll('#habitList input[data-habit]').forEach(cb => {
-    cb.checked = !!todayHabits[cb.dataset.habit];
-  });
+  renderHabits();
 }
 
 // Home mood click
@@ -3436,15 +3515,60 @@ function setupHomeEvents() {
     renderHome();
   });
 
-  document.querySelectorAll('#habitList input[data-habit]').forEach(cb => {
-    cb.addEventListener('change', function() {
+  // Habit list: checkbox change / edit / delete (delegation, bound once)
+  const habitList = document.getElementById('habitList');
+  if (!habitList._bound) {
+    habitList._bound = true;
+    habitList.addEventListener('change', function(e) {
+      const cb = e.target.closest('input[data-habit]');
+      if (!cb) return;
       const dateStr = getCurrentDate();
       const habits = loadHabits();
       if (!habits[dateStr]) habits[dateStr] = {};
-      habits[dateStr][this.dataset.habit] = this.checked;
+      habits[dateStr][cb.dataset.habit] = cb.checked;
       saveHabits(habits);
-      renderHome();
     });
+    habitList.addEventListener('click', function(e) {
+      const editBtn = e.target.closest('.btn-edit-habit');
+      const delBtn = e.target.closest('.btn-del-habit');
+      if (!editBtn && !delBtn) return;
+      e.stopPropagation(); // prevent label from toggling checkbox
+      const hid = (editBtn || delBtn).dataset.hid;
+      if (editBtn) {
+        const defs = getHabitDefs();
+        const def = defs.find(d => d.id === hid);
+        const newText = prompt('编辑习惯名称：', def ? def.text : '');
+        if (newText === null) return;
+        const trimmed = newText.trim();
+        if (!trimmed) { alert('习惯名称不能为空'); return; }
+        def.text = trimmed;
+        saveHabitDefs(defs);
+        renderHome();
+      } else {
+        if (!confirm('确定删除这个习惯吗？相关的打卡记录也会被移除。')) return;
+        let defs = getHabitDefs();
+        defs = defs.filter(d => d.id !== hid);
+        saveHabitDefs(defs);
+        const habits = loadHabits();
+        Object.keys(habits).forEach(d => { delete habits[d][hid]; });
+        saveHabits(habits);
+        renderHome();
+      }
+    });
+  }
+
+  // Add habit
+  document.getElementById('btnAddHabit').addEventListener('click', function() {
+    const text = prompt('请输入新习惯名称（可带 emoji）：');
+    if (text === null) return;
+    const trimmed = text.trim();
+    if (!trimmed) { alert('习惯名称不能为空'); return; }
+    const defs = getHabitDefs();
+    let id = 'h_' + Date.now().toString(36);
+    while (defs.some(d => d.id === id)) id = 'h_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5);
+    defs.push({ id, text: trimmed });
+    saveHabitDefs(defs);
+    renderHome();
   });
 
   document.getElementById('btnStartDay').addEventListener('click', function() {
