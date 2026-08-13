@@ -2455,12 +2455,13 @@ function renderSkincare() {
       const type = row.dataset.type;
       const idx = parseInt(row.dataset.idx);
       if (delBtn) {
-        if (!confirm('确定删除这条护肤步骤吗？')) return;
-        const dateStr = currentDate.skincare;
-        const data = loadSkincare(dateStr);
-        data[type].splice(idx, 1);
-        saveSkincare(dateStr, data);
-        renderSkincare();
+        appConfirm('确定删除这条护肤步骤吗？', function() {
+          const dateStr = currentDate.skincare;
+          const data = loadSkincare(dateStr);
+          data[type].splice(idx, 1);
+          saveSkincare(dateStr, data);
+          renderSkincare();
+        });
       } else {
         enterSkinEditMode(row);
       }
@@ -2795,9 +2796,10 @@ function renderWorkout() {
   const btnClear = document.getElementById('btnClearWorkout');
   if (btnClear) {
     btnClear.addEventListener('click', function() {
-      if (!confirm('确定清空这一天的训练安排吗？')) return;
-      setWorkout(dateStr, { items: [] });
-      renderWorkout();
+      appConfirm('确定清空这一天的训练安排吗？', function() {
+        setWorkout(dateStr, { items: [] });
+        renderWorkout();
+      });
     });
   }
 
@@ -2838,9 +2840,10 @@ function addWorkoutItem(key) {
   renderWorkout();
 }
 function clearWorkoutDay(dateStr) {
-  if (!confirm('确定清空这一天的训练安排吗？')) return;
-  setWorkout(dateStr, { items: [] });
-  renderWorkout();
+  appConfirm('确定清空这一天的训练安排吗？', function() {
+    setWorkout(dateStr, { items: [] });
+    renderWorkout();
+  });
 }
 
 // Seed a default plan for today if empty (one-time hint)
@@ -3022,17 +3025,19 @@ function closeCropModal() {
 // Nickname inline edit
 document.getElementById('displayNickname').addEventListener('click', function() {
   const profile = loadProfile();
-  const newName = prompt('请输入昵称（仅支持英文与汉字）：', profile.nickname || '');
-  if (newName !== null) {
-    const trimmed = newName.trim();
-    if (trimmed && !isValidNickname(trimmed)) {
-      alert('昵称仅支持英文与汉字，请重新输入');
-      return;
+  appPrompt({
+    title: '👤 修改昵称',
+    label: '昵称（仅支持英文与汉字）',
+    defaultValue: profile.nickname || '',
+    validate: function(v) {
+      if (v && !isValidNickname(v)) return '昵称仅支持英文与汉字，请重新输入';
+      return null;
     }
+  }, function(trimmed) {
     profile.nickname = trimmed;
     saveProfile(profile);
     renderProfile();
-  }
+  });
 });
 
 // Open profile edit modal
@@ -3282,12 +3287,12 @@ function renderFinance() {
       const dateStr = btn.dataset.date;
       if (isNaN(idx) || !dateStr) return;
       if (btn.classList.contains('btn-del')) {
-        if (confirm('确定删除这笔记录吗？')) {
+        appConfirm('确定删除这笔记录吗？', function() {
           const entries = getEntries(dateStr);
           entries.splice(idx, 1);
           setEntries(dateStr, entries);
           renderFinance();
-        }
+        });
       } else {
         openEditModal(dateStr, idx);
       }
@@ -3363,6 +3368,83 @@ document.getElementById('editModal').addEventListener('click', function(e) {
     this.style.display = 'none';
   }
 });
+
+// ==================== APP DIALOGS ====================
+// 自定义弹窗替代原生 prompt/confirm/alert —— 原生弹窗在沙箱 iframe（预览面板）
+// 及部分 PWA 环境会被浏览器静默拦截，导致按钮"点击无反应"。
+let _appDialogEl = null;
+function closeAppDialog() {
+  if (_appDialogEl) { _appDialogEl.remove(); _appDialogEl = null; }
+}
+function appConfirm(message, onOk) {
+  closeAppDialog();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.style.zIndex = '300';
+  ov.innerHTML = `
+    <div class="modal" style="width:380px;text-align:center;">
+      <h3 style="margin-bottom:14px;">🤔 确认操作</h3>
+      <p style="font-size:15px;color:#5b4050;line-height:1.7;margin-bottom:4px;word-break:break-word;">${escapeHtml(message)}</p>
+      <div class="btn-row" style="justify-content:center;margin-top:16px;">
+        <button type="button" class="btn-cancel" data-dlg="cancel">取消</button>
+        <button type="button" class="btn-save" data-dlg="ok">确定</button>
+      </div>
+    </div>`;
+  ov.addEventListener('click', function(e) {
+    if (e.target === ov) closeAppDialog();
+    else if (e.target.closest('[data-dlg="cancel"]')) closeAppDialog();
+    else if (e.target.closest('[data-dlg="ok"]')) { closeAppDialog(); onOk && onOk(); }
+  });
+  document.body.appendChild(ov);
+  _appDialogEl = ov;
+}
+function appPrompt(options, onOk) {
+  // options: { title, label, placeholder, defaultValue, validate(value) -> error string | null }
+  closeAppDialog();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.style.zIndex = '300';
+  ov.innerHTML = `
+    <div class="modal" style="width:380px;">
+      <h3 style="margin-bottom:16px;">${escapeHtml(options.title || '请输入')}</h3>
+      <div class="form-group">
+        <label>${escapeHtml(options.label || '')}</label>
+        <input type="text" id="appDlgInput" placeholder="${escapeHtml(options.placeholder || '')}" value="${escapeHtml(options.defaultValue || '')}" maxlength="200">
+        <span class="field-warning" data-dlg="warn" style="display:none;"></span>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn-cancel" data-dlg="cancel">取消</button>
+        <button type="button" class="btn-save" data-dlg="ok">确定</button>
+      </div>
+    </div>`;
+  const input = ov.querySelector('#appDlgInput');
+  const warn = ov.querySelector('[data-dlg="warn"]');
+  function submit() {
+    const val = input.value.trim();
+    if (options.validate) {
+      const err = options.validate(val);
+      if (err) {
+        warn.textContent = err;
+        warn.style.display = 'block';
+        input.style.borderColor = '#e04860';
+        input.focus();
+        return;
+      }
+    }
+    closeAppDialog();
+    onOk && onOk(val);
+  }
+  ov.addEventListener('click', function(e) {
+    if (e.target === ov) closeAppDialog();
+    else if (e.target.closest('[data-dlg="cancel"]')) closeAppDialog();
+    else if (e.target.closest('[data-dlg="ok"]')) submit();
+  });
+  input.addEventListener('keydown', function(e) { if (e.key === 'Enter') submit(); });
+  document.body.appendChild(ov);
+  _appDialogEl = ov;
+  input.focus();
+  input.select();
+}
 
 // ==================== HOME ====================
 const MOOD_KEY = 'life_mood_data';
@@ -3537,38 +3619,45 @@ function setupHomeEvents() {
       if (editBtn) {
         const defs = getHabitDefs();
         const def = defs.find(d => d.id === hid);
-        const newText = prompt('编辑习惯名称：', def ? def.text : '');
-        if (newText === null) return;
-        const trimmed = newText.trim();
-        if (!trimmed) { alert('习惯名称不能为空'); return; }
-        def.text = trimmed;
-        saveHabitDefs(defs);
-        renderHome();
+        appPrompt({
+          title: '✏️ 编辑习惯',
+          label: '习惯名称（可带 emoji）',
+          defaultValue: def ? def.text : '',
+          validate: function(v) { return v ? null : '习惯名称不能为空'; }
+        }, function(trimmed) {
+          def.text = trimmed;
+          saveHabitDefs(defs);
+          renderHome();
+        });
       } else {
-        if (!confirm('确定删除这个习惯吗？相关的打卡记录也会被移除。')) return;
-        let defs = getHabitDefs();
-        defs = defs.filter(d => d.id !== hid);
-        saveHabitDefs(defs);
-        const habits = loadHabits();
-        Object.keys(habits).forEach(d => { delete habits[d][hid]; });
-        saveHabits(habits);
-        renderHome();
+        appConfirm('确定删除这个习惯吗？相关的打卡记录也会被移除。', function() {
+          let defs = getHabitDefs();
+          defs = defs.filter(d => d.id !== hid);
+          saveHabitDefs(defs);
+          const habits = loadHabits();
+          Object.keys(habits).forEach(d => { delete habits[d][hid]; });
+          saveHabits(habits);
+          renderHome();
+        });
       }
     });
   }
 
   // Add habit
   document.getElementById('btnAddHabit').addEventListener('click', function() {
-    const text = prompt('请输入新习惯名称（可带 emoji）：');
-    if (text === null) return;
-    const trimmed = text.trim();
-    if (!trimmed) { alert('习惯名称不能为空'); return; }
-    const defs = getHabitDefs();
-    let id = 'h_' + Date.now().toString(36);
-    while (defs.some(d => d.id === id)) id = 'h_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5);
-    defs.push({ id, text: trimmed });
-    saveHabitDefs(defs);
-    renderHome();
+    appPrompt({
+      title: '🌸 新增习惯',
+      label: '习惯名称（可带 emoji）',
+      placeholder: '例如：喝够 8 杯水 💧',
+      validate: function(v) { return v ? null : '习惯名称不能为空'; }
+    }, function(trimmed) {
+      const defs = getHabitDefs();
+      let id = 'h_' + Date.now().toString(36);
+      while (defs.some(d => d.id === id)) id = 'h_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5);
+      defs.push({ id, text: trimmed });
+      saveHabitDefs(defs);
+      renderHome();
+    });
   });
 
   document.getElementById('btnStartDay').addEventListener('click', function() {
