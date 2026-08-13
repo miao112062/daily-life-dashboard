@@ -1305,6 +1305,41 @@
   .fin-entry .btn-del:hover { background: #fad0e0; border-color: var(--pink-red); transform: translateY(-1px); }
   .fin-entry .btn-edit:active, .fin-entry .btn-del:active { transform: scale(0.95); }
 
+  .fin-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+  .fin-pagination .fin-page-btn {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .fin-pagination .fin-page-btn:hover:not(:disabled) {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .fin-pagination .fin-page-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .fin-pagination .fin-page-info {
+    font-size: 13px;
+    color: var(--text-light);
+    font-weight: 500;
+  }
+
   .empty-state {
     text-align: center;
     padding: 48px 24px;
@@ -3084,6 +3119,8 @@ function getMonthFinances(dateStr) {
   return { income: totalIncome, expense: totalExpense, balance: totalIncome - totalExpense };
 }
 
+let financeCurrentPage = 1;
+
 function renderFinance() {
   const today = getCurrentDate();
   const monthPicker = document.getElementById('finMonthPicker');
@@ -3149,6 +3186,14 @@ function renderFinance() {
     </div>
   `;
 
+  // Pagination
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(monthEntries.length / PAGE_SIZE));
+  if (financeCurrentPage > totalPages) financeCurrentPage = totalPages;
+  if (financeCurrentPage < 1) financeCurrentPage = 1;
+  const pageStart = (financeCurrentPage - 1) * PAGE_SIZE;
+  const pageEntries = monthEntries.slice(pageStart, pageStart + PAGE_SIZE);
+
   // Entries list
   let listHtml = '';
   if (monthEntries.length === 0) {
@@ -3157,7 +3202,7 @@ function renderFinance() {
       <div>这个月还没有记账哦，开始记录吧～</div>
     </div>`;
   } else {
-    monthEntries.forEach(e => {
+    pageEntries.forEach(e => {
       const sign = e.type === 'income' ? '+' : '-';
       const dateLabel = e.date.slice(5);
       listHtml += `<div class="fin-entry ${e.type}">
@@ -3173,14 +3218,29 @@ function renderFinance() {
         </div>
       </div>`;
     });
+    if (totalPages > 1) {
+      listHtml += `<div class="fin-pagination">
+        <button class="fin-page-btn" data-page="prev" ${financeCurrentPage === 1 ? 'disabled' : ''}>上一页</button>
+        <span class="fin-page-info">第 ${financeCurrentPage} / ${totalPages} 页，共 ${monthEntries.length} 条</span>
+        <button class="fin-page-btn" data-page="next" ${financeCurrentPage === totalPages ? 'disabled' : ''}>下一页</button>
+      </div>`;
+    }
   }
   document.getElementById('finEntriesList').innerHTML = listHtml;
 
-  // Bind edit/delete (event delegation) once
+  // Bind edit/delete/pagination (event delegation) once
   const finContainer = document.getElementById('finEntriesList');
   if (!finContainer._bound) {
     finContainer._bound = true;
     finContainer.addEventListener('click', function finClickHandler(e) {
+      const pageBtn = e.target.closest('.fin-page-btn');
+      if (pageBtn && !pageBtn.disabled) {
+        const action = pageBtn.dataset.page;
+        if (action === 'prev') financeCurrentPage--;
+        else if (action === 'next') financeCurrentPage++;
+        renderFinance();
+        return;
+      }
       const btn = e.target.closest('.btn-edit, .btn-del');
       if (!btn) return;
       const idx = parseInt(btn.dataset.idx);
@@ -3215,6 +3275,7 @@ document.getElementById('btnAddFin').addEventListener('click', function() {
   const entries = getEntries(getCurrentDate());
   entries.push({ type, category, amount, note, createdAt: new Date().toISOString() });
   setEntries(getCurrentDate(), entries);
+  financeCurrentPage = 1;
   renderFinance();
 
   // Clear form
@@ -3436,7 +3497,10 @@ setupHomeEvents();
 const finMonthPicker = document.getElementById('finMonthPicker');
 if (finMonthPicker) {
   finMonthPicker.value = getCurrentDate().substring(0, 7);
-  finMonthPicker.addEventListener('change', renderFinance);
+  finMonthPicker.addEventListener('change', function() {
+    financeCurrentPage = 1;
+    renderFinance();
+  });
 }
 const bodyMonthPicker = document.getElementById('bodyMonthPicker');
 if (bodyMonthPicker) {
